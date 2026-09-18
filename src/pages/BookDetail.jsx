@@ -15,6 +15,9 @@ export default function BookDetail() {
   const [myComment, setMyComment] = useState("");
   const [reviewError, setReviewError] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [editRating, setEditRating] = useState(0);
+  const [editComment, setEditComment] = useState("");
   const { user } = useAuth();
   const { items, addItem } = useCart();
   const navigate = useNavigate();
@@ -69,6 +72,58 @@ export default function BookDetail() {
       setReviewError(err.response?.data?.message || "Could not submit your review.");
     } finally {
       setSubmittingReview(false);
+    }
+  };
+
+  const startEditing = (review) => {
+    setEditingReviewId(review._id);
+    setEditRating(review.rating);
+    setEditComment(review.comment);
+    setReviewError("");
+  };
+
+  const cancelEditing = () => {
+    setEditingReviewId(null);
+    setEditRating(0);
+    setEditComment("");
+  };
+
+  const handleUpdateReview = async (reviewId) => {
+    setReviewError("");
+    if (editRating < 1) {
+      setReviewError("Choose a star rating first.");
+      return;
+    }
+    if (!editComment.trim()) {
+      setReviewError("Write a short review before saving.");
+      return;
+    }
+    setSubmittingReview(true);
+    try {
+      await api.put(`/books/${id}/reviews/${reviewId}`, {
+        rating: editRating,
+        comment: editComment.trim(),
+      });
+      cancelEditing();
+      loadReviews();
+      const { data } = await api.get(`/books/${id}`);
+      setBook(data);
+    } catch (err) {
+      setReviewError(err.response?.data?.message || "Could not save your changes.");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    if (!confirm("Delete your review?")) return;
+    try {
+      await api.delete(`/books/${id}/reviews/${reviewId}`);
+      loadReviews();
+      const { data } = await api.get(`/books/${id}`);
+      setBook(data);
+    } catch (err) {
+      setReviewError(err.response?.data?.message || "Could not delete your review.");
     }
   };
 
@@ -186,18 +241,69 @@ export default function BookDetail() {
           {reviews.length === 0 ? (
             <p className="text-ivory/50">No reviews yet — be the first to share your thoughts.</p>
           ) : (
-            reviews.map((r) => (
-              <div key={r._id} className="border-b border-navy-700/40 pb-6">
-                <div className="flex items-center gap-3">
-                  <StarRating value={r.rating} size={14} />
-                  <span className="text-sm font-medium text-ivory">{r.userName}</span>
-                  <span className="text-xs text-ivory/40">
-                    {new Date(r.createdAt).toLocaleDateString()}
-                  </span>
+            reviews.map((r) => {
+              const isMine = user && r.user === user._id;
+              const isEditing = editingReviewId === r._id;
+
+              return (
+                <div key={r._id} className="border-b border-navy-700/40 pb-6">
+                  {isEditing ? (
+                    <div className="max-w-xl space-y-3">
+                      <StarRating value={editRating} onChange={setEditRating} size={22} />
+                      <textarea
+                        rows={3}
+                        value={editComment}
+                        onChange={(e) => setEditComment(e.target.value)}
+                        className="w-full rounded-md border border-navy-700 bg-navy-900 px-4 py-2 text-ivory focus:border-gold-500"
+                      />
+                      {reviewError && <p className="text-sm text-red-400">{reviewError}</p>}
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => handleUpdateReview(r._id)}
+                          disabled={submittingReview}
+                          className="rounded-full bg-gold-500 px-5 py-2 text-sm font-medium text-ink hover:bg-gold-400 disabled:opacity-50"
+                        >
+                          {submittingReview ? "Saving…" : "Save"}
+                        </button>
+                        <button
+                          onClick={cancelEditing}
+                          className="rounded-full border border-navy-700 px-5 py-2 text-sm text-ivory/70 hover:border-gold-500"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <StarRating value={r.rating} size={14} />
+                        <span className="text-sm font-medium text-ivory">{r.userName}</span>
+                        <span className="text-xs text-ivory/40">
+                          {new Date(r.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm leading-relaxed text-ivory/70">{r.comment}</p>
+                      {isMine && (
+                        <div className="mt-2 flex gap-4">
+                          <button
+                            onClick={() => startEditing(r)}
+                            className="text-xs text-gold-400 hover:text-gold-300"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReview(r._id)}
+                            className="text-xs text-ivory/40 hover:text-red-400"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
-                <p className="mt-2 text-sm leading-relaxed text-ivory/70">{r.comment}</p>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
