@@ -79,7 +79,7 @@ export default function Reader() {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="font-display text-2xl text-ivory">{access.title}</h1>
         
-          href={access.url}
+          <a href={access.url}
           download
           className="rounded-full border border-navy-700 px-4 py-2 text-sm text-ivory/70 hover:border-gold-500 hover:text-gold-400"
         >
