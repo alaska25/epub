@@ -13,8 +13,10 @@ export default function Reader() {
   const [error, setError] = useState("");
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
+  const [pageWidth, setPageWidth] = useState(720);
   const epubContainerRef = useRef(null);
   const renditionRef = useRef(null);
+  const pdfContainerRef = useRef(null);
 
   useEffect(() => {
     api
@@ -37,6 +39,26 @@ export default function Reader() {
     return () => book.destroy();
   }, [access]);
 
+  // Keep the PDF page sized to whatever space its container actually has,
+  // instead of a fixed pixel width that looks wrong on different screens.
+  useEffect(() => {
+    if (!pdfContainerRef.current) return;
+
+    const updateWidth = () => {
+      if (pdfContainerRef.current) {
+        // Cap at 800px so pages don't stretch too wide on large monitors
+        setPageWidth(Math.min(pdfContainerRef.current.clientWidth, 800));
+      }
+    };
+
+    updateWidth();
+
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(pdfContainerRef.current);
+
+    return () => observer.disconnect();
+  }, [access]);
+
   if (error) {
     return (
       <div className="mx-auto max-w-xl px-6 py-24 text-center">
@@ -56,7 +78,7 @@ export default function Reader() {
     <div className="mx-auto max-w-4xl px-6 py-10">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="font-display text-2xl text-ivory">{access.title}</h1>
-        <a
+        
           href={access.url}
           download
           className="rounded-full border border-navy-700 px-4 py-2 text-sm text-ivory/70 hover:border-gold-500 hover:text-gold-400"
@@ -66,14 +88,16 @@ export default function Reader() {
       </div>
 
       {access.fileType === "pdf" ? (
-        <div className="rounded-md bg-navy-900 p-4">
-          <Document
-            file={access.url}
-            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-            loading={<p className="text-ivory/50">Loading PDF…</p>}
-          >
-            <Page pageNumber={pageNumber} width={720} />
-          </Document>
+        <div ref={pdfContainerRef} className="rounded-md bg-navy-900 p-4">
+          <div className="flex justify-center overflow-x-auto">
+            <Document
+              file={access.url}
+              onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+              loading={<p className="text-ivory/50">Loading PDF…</p>}
+            >
+              <Page pageNumber={pageNumber} width={pageWidth} />
+            </Document>
+          </div>
           {numPages && (
             <div className="mt-4 flex items-center justify-center gap-4">
               <button
