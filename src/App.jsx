@@ -13,6 +13,10 @@ import CheckoutSuccess from "./pages/CheckoutSuccess.jsx";
 import MyLibrary from "./pages/MyLibrary.jsx";
 import Reader from "./pages/Reader.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
+import About from "./pages/About.jsx";
+import Contact from "./pages/Contact.jsx";
+import RefundPolicy from "./pages/RefundPolicy.jsx";
+import Terms from "./pages/Terms.jsx";
 
 export default function App() {
   return (
@@ -52,7 +56,10 @@ export default function App() {
               </AdminRoute>
             }
           />
-
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/refund-policy" element={<RefundPolicy />} />
+          <Route path="/terms" element={<Terms />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
