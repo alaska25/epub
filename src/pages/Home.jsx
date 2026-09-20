@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/axios.js";
-import BookCard from "../components/BookCard.jsx";
+import HeroCarousel from "../components/HeroCarousel.jsx";
+import BookCarousel from "../components/BookCarousel.jsx";
 
 const FEATURES = [
   {
@@ -59,7 +60,7 @@ export default function Home() {
 
   useEffect(() => {
     api
-      .get("/books", { params: { limit: 4 } })
+      .get("/books", { params: { limit: 12 } })
       .then(({ data }) => setFeatured(data.books))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -84,49 +85,7 @@ export default function Home() {
   return (
     <div>
       {/* Hero */}
-      <section className="border-b border-navy-700/60">
-        <div className="mx-auto grid max-w-6xl gap-10 px-6 py-20 md:grid-cols-[1.2fr,1fr] md:py-28">
-          <div>
-            <p className="text-sm font-medium uppercase tracking-widest text-gold-500/80">
-              Digital Products &bull; Ebooks &bull; Templates &bull; Tools
-            </p>
-            <h1 className="mt-4 font-display text-5xl leading-[1.1] text-ivory md:text-6xl">
-              A library that fits in your{" "}
-              <span className="text-gold-400">pocket.</span>
-            </h1>
-            <p className="mt-6 max-w-md text-lg text-ivory/60">
-              Adyoolau brings together fiction, nonfiction, and reference titles
-              you can buy once and read anywhere — in the browser or downloaded
-              for offline reading.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                to="/catalog"
-                className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400"
-              >
-                Browse the Catalog
-              </Link>
-              <Link
-                to="/catalog?search=free"
-                className="rounded-full border border-navy-700 px-6 py-3 text-sm font-medium text-ivory/80 hover:border-gold-500 hover:text-gold-400"
-              >
-                Start with a Free Title
-              </Link>
-            </div>
-          </div>
-          <div className="hidden items-center justify-center md:flex">
-            <div className="grid grid-cols-3 gap-3 opacity-90">
-              {[...Array(6)].map((_, i) => (
-                <div
-                  key={i}
-                  className="aspect-[2/3] w-20 rounded bg-gradient-to-b from-navy-700 to-navy-900"
-                  style={{ transform: `translateY(${i % 2 === 0 ? "0" : "16px"})` }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      <HeroCarousel />
 
       {/* Featured books */}
       <section className="mx-auto max-w-6xl px-6 py-16">
@@ -147,11 +106,7 @@ export default function Home() {
         ) : featured.length === 0 ? (
           <p className="text-ivory/50">No books yet — check back soon.</p>
         ) : (
-          <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 md:grid-cols-4">
-            {featured.map((book) => (
-              <BookCard key={book._id} book={book} showAddToCart />
-            ))}
-          </div>
+          <BookCarousel books={featured} />
         )}
       </section>
 

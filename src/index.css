@@ -15,6 +15,15 @@ body {
   color: #0b0e14;
 }
 
+/* Hides the scrollbar on carousels while still allowing scroll/swipe */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge legacy */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
 /* Visible keyboard focus for accessibility */
 a:focus-visible,
 button:focus-visible,
