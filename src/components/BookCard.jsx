@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
+import StarRating from "./StarRating.jsx";
 
 export default function BookCard({ book, showAddToCart = false }) {
   const { items, addItem } = useCart();
@@ -17,19 +18,40 @@ export default function BookCard({ book, showAddToCart = false }) {
   };
 
   return (
-    <Link to={`/book/${book._id}`} className="group block">
-      <div className="aspect-[2/3] overflow-hidden rounded-md bg-navy-800">
+    <Link to={`/book/${book._id}`} className="group block w-full text-left">
+      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-md bg-navy-800">
         <img
           src={book.coverUrl}
           alt={`Cover of ${book.title}`}
           className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
         />
+        {book.fileType && (
+          <span className="absolute right-2 top-2 rounded-full bg-ink/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ivory/90 backdrop-blur-sm">
+            {book.fileType}
+          </span>
+        )}
       </div>
-      <h3 className="mt-3 font-display text-base leading-snug text-ivory group-hover:text-gold-400">
+
+      <h3 className="mt-3 font-display text-base leading-snug text-slate-900 dark:text-ivory group-hover:text-gold-400">
         {book.title}
       </h3>
-      <p className="text-sm text-ivory/50">{book.author}</p>
-      <p className="mt-1 text-sm text-gold-400">{book.isFree ? "Free" : `$${book.price.toFixed(2)}`}</p>
+
+      {book.subtitle && (
+        <p className="mt-0.5 truncate text-sm text-slate-600 dark:text-ivory/60">{book.subtitle}</p>
+      )}
+
+      {book.reviewCount > 0 && (
+        <div className="mt-1 flex items-center gap-1.5">
+          <StarRating value={book.avgRating} size={13} />
+          <span className="text-xs text-slate-400 dark:text-ivory/40">({book.reviewCount})</span>
+        </div>
+      )}
+
+      <p className="mt-1 text-xs text-slate-400 dark:text-ivory/40">{book.author}</p>
+
+      <p className="mt-1 text-sm text-gold-500 dark:text-gold-400 font-medium">
+        {book.isFree ? "Free" : `$${book.price.toFixed(2)}`}
+      </p>
 
       {showAddToCart && (
         <button

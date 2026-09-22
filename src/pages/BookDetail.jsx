@@ -131,7 +131,6 @@ export default function BookDetail() {
   if (!book) return <p className="mx-auto max-w-6xl px-6 py-16 text-ivory/50">Book not found.</p>;
 
   const inCart = items.some((b) => b._id === book._id);
-
   const handleRead = () => navigate(`/read/${book._id}`);
 
   const handleGetFree = async () => {
@@ -142,16 +141,29 @@ export default function BookDetail() {
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-16">
+      {/* Top Section: Main Book Information Grid */}
       <div className="grid gap-12 md:grid-cols-[280px,1fr]">
-        <img
-          src={book.coverUrl}
-          alt={`Cover of ${book.title}`}
-          className="aspect-[2/3] w-full rounded-md object-cover shadow-2xl shadow-black/50"
-        />
+        <div className="w-full">
+          <img
+            src={book.coverUrl}
+            alt={`Cover of ${book.title}`}
+            className="aspect-[2/3] w-full rounded-md object-cover shadow-2xl shadow-black/50"
+          />
+        </div>
+
         <div>
-          <p className="text-sm uppercase tracking-wide text-gold-500/80">{book.category}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <p className="text-sm uppercase tracking-wide text-gold-500/80">{book.category}</p>
+            {book.fileType && (
+              <span className="rounded-full border border-navy-700 px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide text-ivory/60">
+                {book.fileType}
+              </span>
+            )}
+          </div>
           <h1 className="mt-2 font-display text-4xl text-ivory">{book.title}</h1>
+          {book.subtitle && <p className="mt-1 text-xl text-ivory/70">{book.subtitle}</p>}
           <p className="mt-2 text-lg text-ivory/60">by {book.author}</p>
+
           <div className="mt-2 flex items-center gap-2">
             <StarRating value={book.avgRating} />
             <span className="text-sm text-ivory/50">
@@ -160,7 +172,11 @@ export default function BookDetail() {
                 : "No reviews yet"}
             </span>
           </div>
-          <p className="mt-6 max-w-xl leading-relaxed text-ivory/70">{book.description}</p>
+
+          {/* Typography Description View Box */}
+          <p className="mt-6 max-w-2xl text-base leading-relaxed text-ivory/80 whitespace-pre-line tracking-wide">
+            {book.description}
+          </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <span className="font-display text-2xl text-gold-400">
@@ -191,6 +207,15 @@ export default function BookDetail() {
               </button>
             )}
 
+            {!owned && book.sampleFileType && (
+              <button
+                onClick={() => navigate(`/sample/${book._id}`)}
+                className="rounded-full border border-gold-500/60 px-6 py-3 text-sm font-medium text-gold-400 hover:border-gold-400 hover:text-gold-300"
+              >
+                Read sample
+              </button>
+            )}
+
             {!user && <span className="text-sm text-ivory/40">Sign in to buy or read this title.</span>}
           </div>
 
@@ -209,9 +234,11 @@ export default function BookDetail() {
         </div>
       </div>
 
+      {/* Bottom Section: Customer Reviews Feed Layout */}
       <div className="mt-16 border-t border-navy-700/60 pt-10">
         <h2 className="font-display text-2xl text-ivory">Reviews</h2>
 
+        {/* Dynamic Submission Form for verified buyers */}
         {owned && !myReview && (
           <form onSubmit={handleSubmitReview} className="mt-6 max-w-xl space-y-3">
             <StarRating value={myRating} onChange={setMyRating} size={22} />
@@ -220,7 +247,7 @@ export default function BookDetail() {
               value={myComment}
               onChange={(e) => setMyComment(e.target.value)}
               placeholder="What did you think of this book?"
-              className="w-full rounded-md border border-navy-700 bg-navy-900 px-4 py-2 text-ivory placeholder:text-ivory/40 focus:border-gold-500"
+              className="w-full rounded-md border border-navy-700 bg-navy-900 px-4 py-2 text-ivory placeholder:text-ivory/40 focus:border-gold-500 outline-none"
             />
             {reviewError && <p className="text-sm text-red-400">{reviewError}</p>}
             <button
@@ -237,6 +264,7 @@ export default function BookDetail() {
           <p className="mt-6 text-sm text-ivory/40">Only readers who own this book can leave a review.</p>
         )}
 
+        {/* Dynamic Reviews Loops Feed List */}
         <div className="mt-8 space-y-6">
           {reviews.length === 0 ? (
             <p className="text-ivory/50">No reviews yet — be the first to share your thoughts.</p>
@@ -254,7 +282,7 @@ export default function BookDetail() {
                         rows={3}
                         value={editComment}
                         onChange={(e) => setEditComment(e.target.value)}
-                        className="w-full rounded-md border border-navy-700 bg-navy-900 px-4 py-2 text-ivory focus:border-gold-500"
+                        className="w-full rounded-md border border-navy-700 bg-navy-900 px-4 py-2 text-ivory focus:border-gold-500 outline-none"
                       />
                       {reviewError && <p className="text-sm text-red-400">{reviewError}</p>}
                       <div className="flex gap-3">
@@ -267,7 +295,7 @@ export default function BookDetail() {
                         </button>
                         <button
                           onClick={cancelEditing}
-                          className="rounded-full border border-navy-700 px-5 py-2 text-sm text-ivory/70 hover:border-gold-500"
+                          className="rounded-full border border-navy-700 px-5 py-2 text-sm font-medium text-ivory/70 hover:text-ivory"
                         >
                           Cancel
                         </button>
@@ -275,14 +303,16 @@ export default function BookDetail() {
                     </div>
                   ) : (
                     <>
-                      <div className="flex items-center gap-3">
-                        <StarRating value={r.rating} size={14} />
-                        <span className="text-sm font-medium text-ivory">{r.userName}</span>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-ivory">{r.userName}</p>
+                          <StarRating value={r.rating} size={16} />
+                        </div>
                         <span className="text-xs text-ivory/40">
                           {new Date(r.createdAt).toLocaleDateString()}
                         </span>
                       </div>
-                      <p className="mt-2 text-sm leading-relaxed text-ivory/70">{r.comment}</p>
+                      <p className="mt-2 text-sm text-ivory/70">{r.comment}</p>
                       {isMine && (
                         <div className="mt-2 flex gap-4">
                           <button

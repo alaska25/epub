@@ -20,7 +20,13 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-navy-700/60 bg-ink/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-3">
-        <Link to="/" className="flex items-center gap-3 shrink-0">
+        {/* outline-none + focus-visible: keeps the gold ring for keyboard (Tab)
+            navigation, but stops it lingering after a plain mouse click on an
+            SPA route that doesn't trigger a full page reload. */}
+        <Link
+          to="/"
+          className="flex shrink-0 items-center gap-3 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-gold-500 focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
+        >
           <img src={logo} alt="Adyoolau" className="h-10 w-10 rounded-full" />
           <span className="font-display text-xl tracking-wide text-ivory">Adyoolau</span>
         </Link>

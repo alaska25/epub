@@ -12,6 +12,7 @@ import Cart from "./pages/Cart.jsx";
 import CheckoutSuccess from "./pages/CheckoutSuccess.jsx";
 import MyLibrary from "./pages/MyLibrary.jsx";
 import Reader from "./pages/Reader.jsx";
+import SampleReader from "./pages/SampleReader.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import About from "./pages/About.jsx";
 import Contact from "./pages/Contact.jsx";
@@ -51,6 +52,8 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          {/* Public: no login required, matching the KDP "read sample" pattern */}
+          <Route path="/sample/:id" element={<SampleReader />} />
           <Route
             path="/admin/*"
             element={

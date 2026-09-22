@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import api from "../api/axios.js";
+// Note: Link is no longer used here since BookCarousel now owns its own
+// "View all books" link — remove this comment if you reintroduce it elsewhere.
 import HeroCarousel from "../components/HeroCarousel.jsx";
 import BookCarousel from "../components/BookCarousel.jsx";
 
@@ -87,28 +88,20 @@ export default function Home() {
       {/* Hero */}
       <HeroCarousel />
 
-      {/* Featured books */}
-      <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="mb-8 flex items-end justify-between">
-          <div>
-            <p className="text-sm font-medium uppercase tracking-widest text-gold-500/80">
-              Featured Books
-            </p>
-            <h2 className="mt-1 font-display text-3xl text-ivory">Popular titles</h2>
-          </div>
-          <Link to="/catalog" className="text-sm text-gold-400 hover:text-gold-300">
-            View all books &rarr;
-          </Link>
-        </div>
-
-        {loading ? (
+      {/* Featured books — BookCarousel owns its own "Featured Books" header
+          and "View all books" link, so Home only handles loading/empty states
+          here and lets the carousel render itself once books are ready. */}
+      {loading ? (
+        <div className="mx-auto max-w-6xl px-6 py-16">
           <p className="text-ivory/50">Loading books…</p>
-        ) : featured.length === 0 ? (
+        </div>
+      ) : featured.length === 0 ? (
+        <div className="mx-auto max-w-6xl px-6 py-16">
           <p className="text-ivory/50">No books yet — check back soon.</p>
-        ) : (
-          <BookCarousel books={featured} />
-        )}
-      </section>
+        </div>
+      ) : (
+        <BookCarousel books={featured} />
+      )}
 
       {/* Trust features */}
       <section className="border-t border-navy-700/60 bg-navy-900/40">
