@@ -45,7 +45,7 @@ export default function HeroCarousel() {
 
   return (
     <section className="relative overflow-hidden border-b border-navy-700/60">
-      <div className="mx-auto grid max-w-6xl gap-10 px-6 py-20 md:grid-cols-[1.2fr,1fr] md:py-28">
+      <div className="mx-auto grid min-h-[520px] max-w-6xl items-center gap-10 px-6 py-16 md:grid-cols-[1.2fr,1fr] md:min-h-[560px] md:py-20">
         <div>
           <p className="text-sm font-medium uppercase tracking-widest text-gold-500/80">
             {slide.eyebrow}

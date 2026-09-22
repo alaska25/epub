@@ -18,6 +18,8 @@ import Contact from "./pages/Contact.jsx";
 import RefundPolicy from "./pages/RefundPolicy.jsx";
 import Terms from "./pages/Terms.jsx";
 import ChatWidget from "./components/ChatWidget.jsx";
+import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
+
 
 export default function App() {
   return (
@@ -61,6 +63,7 @@ export default function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/refund-policy" element={<RefundPolicy />} />
           <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
