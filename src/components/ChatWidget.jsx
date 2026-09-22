@@ -9,6 +9,10 @@ export default function ChatWidget() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  // Tracks the visible viewport height on mobile so the panel can shrink to
+  // sit above the on-screen keyboard instead of being covered by it. Falls
+  // back to null (no override) on browsers without the visualViewport API.
+  const [viewportHeight, setViewportHeight] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -16,6 +20,26 @@ export default function ChatWidget() {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, open]);
+
+  // Keep the panel's height in sync with the actual visible viewport while
+  // it's open, so opening the keyboard shrinks the panel (keeping the input
+  // in view) instead of the keyboard just covering the bottom of a
+  // fixed-size box. This only matters on mobile, where the floating-card
+  // layout below is replaced by a full-screen one anyway.
+  useEffect(() => {
+    if (!open || typeof window === "undefined" || !window.visualViewport) return;
+
+    const vv = window.visualViewport;
+    const updateHeight = () => setViewportHeight(vv.height);
+
+    updateHeight();
+    vv.addEventListener("resize", updateHeight);
+    vv.addEventListener("scroll", updateHeight);
+    return () => {
+      vv.removeEventListener("resize", updateHeight);
+      vv.removeEventListener("scroll", updateHeight);
+    };
+  }, [open]);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -44,7 +68,16 @@ export default function ChatWidget() {
   return (
     <>
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 flex h-[28rem] w-80 flex-col overflow-hidden rounded-lg border border-navy-700 bg-navy-900 shadow-2xl shadow-black/50 sm:w-96">
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-navy-900 sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[28rem] sm:w-80 sm:overflow-hidden sm:rounded-lg sm:border sm:border-navy-700 sm:shadow-2xl sm:shadow-black/50 sm:w-96"
+          style={{
+            // Use dvh as the baseline (resizes with the keyboard on modern
+            // mobile browsers), then override with the live visualViewport
+            // measurement when we have one, as a fallback for browsers
+            // where dvh alone doesn't track the keyboard reliably.
+            height: viewportHeight ? `${viewportHeight}px` : "100dvh",
+          }}
+        >
           <div className="flex items-center justify-between border-b border-navy-700/60 bg-navy-800 px-4 py-3">
             <p className="font-display text-sm text-ivory">Adyoolau Support</p>
             <button
@@ -78,7 +111,7 @@ export default function ChatWidget() {
             <div ref={messagesEndRef} />
           </div>
 
-          <form onSubmit={handleSend} className="border-t border-navy-700/60 p-3">
+          <form onSubmit={handleSend} className="border-t border-navy-700/60 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <div className="flex gap-2">
               <input
                 type="text"
