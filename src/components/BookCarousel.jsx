@@ -1,25 +1,40 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import BookCard from "./BookCard";
 
 export default function BookCarousel({ books = [] }) {
   const [scrollIndex, setScrollIndex] = useState(0);
-  const [visibleCount, setVisibleCount] = useState(4); // Default to 4 on desktop
+  const [visibleCount, setVisibleCount] = useState(4);
+  const [cardWidth, setCardWidth] = useState(240);
 
-  const CARD_WIDTH = 240;
-  const GAP_WIDTH = 24; // gap-6 is 24px
-  const STEP = CARD_WIDTH + GAP_WIDTH;
+  const containerRef = useRef(null);
+  const GAP_WIDTH = 24; // gap-6 is 24px (mobile uses a smaller gap, see below)
+  const MOBILE_GAP_WIDTH = 8; // gap-2 for a tighter, more even mobile row
 
-  // Track the viewport width to know how many cards can cleanly fit on the screen
+  const gap = window.innerWidth < 640 ? MOBILE_GAP_WIDTH : GAP_WIDTH;
+  const STEP = cardWidth + gap;
+
   useEffect(() => {
     const handleResize = () => {
+      let count;
       if (window.innerWidth < 640) {
-        setVisibleCount(1); // Mobile screens show 1 card completely
+        count = 4; // Mobile: show 4 cards
       } else if (window.innerWidth < 768) {
-        setVisibleCount(2); // Small tablets show 2 cards
+        count = 2; // Small tablets
       } else if (window.innerWidth < 1024) {
-        setVisibleCount(3); // Large tablets show 3 cards
+        count = 3; // Large tablets
       } else {
-        setVisibleCount(4); // Desktop monitors show 4 cards perfectly
+        count = 4; // Desktop
+      }
+      setVisibleCount(count);
+
+      // Measure the actual container width and derive card width from it,
+      // instead of relying on a fixed 240px that won't fit small screens.
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.offsetWidth;
+        const currentGap = window.innerWidth < 640 ? MOBILE_GAP_WIDTH : GAP_WIDTH;
+        const totalGap = currentGap * (count - 1);
+        const width = (containerWidth - totalGap) / count;
+        setCardWidth(width);
       }
     };
 
@@ -28,7 +43,6 @@ export default function BookCarousel({ books = [] }) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Calculate the safe boundary limit so you can't slide into blank space
   const maxScrollIndex = Math.max(0, books.length - visibleCount);
 
   const handlePrev = () => {
@@ -42,14 +56,14 @@ export default function BookCarousel({ books = [] }) {
   if (!books || books.length === 0) return null;
 
   return (
-    <section className="mx-auto w-full max-w-6xl px-6 py-12">
+    <section className="mx-auto w-full max-w-6xl px-3 py-8 sm:px-6 sm:py-12">
       {/* Section Header */}
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium uppercase tracking-wider text-gold-500/80">
             Featured Books
           </p>
-          <h2 className="mt-1 font-display text-3xl font-bold text-ink dark:text-ivory">
+          <h2 className="mt-1 font-display text-3xl font-bold text-ink">
             Popular titles
           </h2>
         </div>
@@ -59,36 +73,38 @@ export default function BookCarousel({ books = [] }) {
       </div>
 
       {/* Outer Context Window Container Frame */}
-      <div className="relative mt-8 w-full">
-        
+      <div className="relative mt-4 w-full sm:mt-8" ref={containerRef}>
+
         {/* Left Arrow Button */}
         <button
           onClick={handlePrev}
           disabled={scrollIndex === 0}
           aria-label="Previous items"
-          className="absolute -left-4 top-1/2 z-20 -translate-y-1/2 rounded-full border border-slate-200 dark:border-ivory/20 bg-white dark:bg-ink p-3 text-ink dark:text-ivory shadow-md transition-all hover:bg-slate-50 dark:hover:bg-navy-800 disabled:pointer-events-none disabled:opacity-0"
+          className="absolute -left-2 top-1/2 z-20 -translate-y-1/2 rounded-full border border-navy-700/60 bg-ink p-1.5 text-ivory shadow-md transition-all hover:bg-navy-800 disabled:pointer-events-none disabled:opacity-0 sm:-left-4 sm:p-3"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-3 w-3 sm:h-4 sm:w-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
 
         {/* The Clipped Window Track */}
         <div className="w-full overflow-hidden rounded-lg">
-          
+
           {/* Transforming Slider Track Ribbon */}
           <div
-            className="flex gap-6 transition-transform duration-500 ease-out"
+            className="flex transition-transform duration-500 ease-out"
             style={{
+              gap: `${gap}px`,
               transform: `translateX(-${scrollIndex * STEP}px)`,
             }}
           >
             {books.map((book) => (
-              <div 
-                key={book._id} 
-                className="w-[240px] shrink-0"
+              <div
+                key={book._id}
+                className="shrink-0"
+                style={{ width: `${cardWidth}px` }}
               >
-                <BookCard book={book} showAddToCart={true} />
+                <BookCard book={book} showAddToCart={true} compact={cardWidth < 140} />
               </div>
             ))}
           </div>
@@ -100,9 +116,9 @@ export default function BookCarousel({ books = [] }) {
           onClick={handleNext}
           disabled={scrollIndex >= maxScrollIndex}
           aria-label="Next items"
-          className="absolute -right-4 top-1/2 z-20 -translate-y-1/2 rounded-full border border-slate-200 dark:border-ivory/20 bg-white dark:bg-ink p-3 text-ink dark:text-ivory shadow-md transition-all hover:bg-slate-50 dark:hover:bg-navy-800 disabled:pointer-events-none disabled:opacity-0"
+          className="absolute -right-2 top-1/2 z-20 -translate-y-1/2 rounded-full border border-navy-700/60 bg-ink p-1.5 text-ivory shadow-md transition-all hover:bg-navy-800 disabled:pointer-events-none disabled:opacity-0 sm:-right-4 sm:p-3"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-3 w-3 sm:h-4 sm:w-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </button>
