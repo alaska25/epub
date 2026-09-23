@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
 import ePub from "epubjs";
 
 // react-pdf needs a worker; load it from a CDN matching the installed pdfjs-dist version.
@@ -112,9 +114,17 @@ export default function BookViewer({ url, fileType, downloadable = true }) {
               <Page
                 pageNumber={pageNumber}
                 width={pageWidth}
-                onLoadSuccess={(page) =>
-                  setPageAspect(page.originalHeight / page.originalWidth)
-                }
+                onLoadSuccess={(page) => {
+                  // Use pdfjs-dist's own viewport API rather than react-pdf's
+                  // originalWidth/originalHeight convenience props — those
+                  // aren't present in every react-pdf version, and silently
+                  // produce NaN (which Math.min then can't clamp against,
+                  // so the height cap below does nothing) when missing.
+                  const viewport = page.getViewport({ scale: 1 });
+                  if (viewport.width && viewport.height) {
+                    setPageAspect(viewport.height / viewport.width);
+                  }
+                }}
               />
             </Document>
           </div>
