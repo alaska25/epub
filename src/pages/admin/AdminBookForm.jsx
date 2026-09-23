@@ -11,6 +11,8 @@ const emptyForm = {
   price: "",
   isFree: false,
   featured: false,
+  pageCount: "",
+  publishedAt: "",
 };
 
 // A labeled file input with a filename chip and a way to clear the selection,
@@ -47,6 +49,15 @@ function FileField({ label, hint, accept, file, onChange, required }) {
   );
 }
 
+// Formats an ISO date string (or Date) down to the yyyy-mm-dd shape a
+// <input type="date"> expects, since the API returns full ISO timestamps.
+const toDateInputValue = (value) => {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().slice(0, 10);
+};
+
 export default function AdminBookForm() {
   const { id } = useParams();
   const isEditing = Boolean(id);
@@ -71,6 +82,8 @@ export default function AdminBookForm() {
         price: data.price,
         isFree: data.isFree,
         featured: data.featured,
+        pageCount: data.pageCount ?? "",
+        publishedAt: toDateInputValue(data.publishedAt),
       });
       setCurrentSampleType(data.sampleFileType || null);
     });
@@ -188,6 +201,31 @@ export default function AdminBookForm() {
           onChange={(e) => update("category", e.target.value)}
           className="w-full rounded-md border border-navy-700 bg-navy-900 px-4 py-2 text-ivory focus:border-gold-500"
         />
+      </div>
+
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <label className="mb-1 block text-sm text-ivory/60">Page count</label>
+          <p className="mb-1.5 text-xs text-ivory/40">Optional — shown in the book details on the page.</p>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={form.pageCount}
+            onChange={(e) => update("pageCount", e.target.value)}
+            className="w-full rounded-md border border-navy-700 bg-navy-900 px-4 py-2 text-ivory focus:border-gold-500"
+          />
+        </div>
+        <div className="flex-1">
+          <label className="mb-1 block text-sm text-ivory/60">Published date</label>
+          <p className="mb-1.5 text-xs text-ivory/40">Optional — only the year is shown to readers.</p>
+          <input
+            type="date"
+            value={form.publishedAt}
+            onChange={(e) => update("publishedAt", e.target.value)}
+            className="w-full rounded-md border border-navy-700 bg-navy-900 px-4 py-2 text-ivory focus:border-gold-500"
+          />
+        </div>
       </div>
 
       <div className="flex items-center gap-6">

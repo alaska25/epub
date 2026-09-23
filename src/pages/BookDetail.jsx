@@ -18,6 +18,8 @@ export default function BookDetail() {
   const [editingReviewId, setEditingReviewId] = useState(null);
   const [editRating, setEditRating] = useState(0);
   const [editComment, setEditComment] = useState("");
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [claimingFree, setClaimingFree] = useState(false);
   const { user } = useAuth();
   const { items, addItem } = useCart();
   const navigate = useNavigate();
@@ -133,10 +135,24 @@ export default function BookDetail() {
   const inCart = items.some((b) => b._id === book._id);
   const handleRead = () => navigate(`/read/${book._id}`);
 
+  const handleAddToCart = async () => {
+    setAddingToCart(true);
+    try {
+      await addItem(book);
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
   const handleGetFree = async () => {
     if (!user) return navigate("/login");
-    await api.post(`/books/${book._id}/claim`);
-    setOwned(true);
+    setClaimingFree(true);
+    try {
+      await api.post(`/books/${book._id}/claim`);
+      setOwned(true);
+    } finally {
+      setClaimingFree(false);
+    }
   };
 
   return (
@@ -152,7 +168,7 @@ export default function BookDetail() {
         </div>
 
         <div>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm uppercase tracking-wide text-gold-500/80">{book.category}</p>
             {book.fileType && (
               <span className="rounded-full border border-navy-700 px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide text-ivory/60">
@@ -160,11 +176,11 @@ export default function BookDetail() {
               </span>
             )}
           </div>
-          <h1 className="mt-2 font-display text-4xl text-ivory">{book.title}</h1>
+          <h1 className="mt-1.5 font-display text-4xl text-ivory">{book.title}</h1>
           {book.subtitle && <p className="mt-1 text-xl text-ivory/70">{book.subtitle}</p>}
-          <p className="mt-2 text-lg text-ivory/60">by {book.author}</p>
+          <p className="mt-1 text-lg text-ivory/60">by {book.author}</p>
 
-          <div className="mt-2 flex items-center gap-2">
+          <div className="mt-1.5 flex items-center gap-2">
             <StarRating value={book.avgRating} />
             <span className="text-sm text-ivory/50">
               {book.reviewCount > 0
@@ -173,13 +189,12 @@ export default function BookDetail() {
             </span>
           </div>
 
-          {/* Typography Description View Box */}
-          <p className="mt-6 max-w-2xl text-base leading-relaxed text-ivory/80 whitespace-pre-line tracking-wide">
-            {book.description}
-          </p>
-
-          <div className="mt-8 flex flex-wrap items-center gap-4">
-            <span className="font-display text-2xl text-gold-400">
+          {/* Price + purchase action, right under the rating so the
+              CTA is visible without scrolling. "Read sample" now sits
+              alongside it as a lighter, secondary action instead of a
+              full-width button competing with "Add to cart". */}
+          <div className="mt-5 flex flex-wrap items-center gap-4">
+            <span className="font-display text-3xl font-semibold text-gold-400">
               {book.isFree ? "Free" : `$${book.price.toFixed(2)}`}
             </span>
 
@@ -193,31 +208,68 @@ export default function BookDetail() {
             ) : book.isFree ? (
               <button
                 onClick={handleGetFree}
-                className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400"
+                disabled={claimingFree}
+                className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400 disabled:opacity-50"
               >
-                Get for free
+                {claimingFree ? "Adding…" : "Get for free"}
               </button>
             ) : (
               <button
-                onClick={() => addItem(book)}
-                disabled={inCart}
+                onClick={handleAddToCart}
+                disabled={inCart || addingToCart}
                 className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400 disabled:opacity-50"
               >
-                {inCart ? "In your cart" : "Add to cart"}
+                {inCart ? "In your cart" : addingToCart ? "Adding…" : "Add to cart"}
               </button>
             )}
 
             {!owned && book.sampleFileType && (
               <button
                 onClick={() => navigate(`/sample/${book._id}`)}
-                className="rounded-full border border-gold-500/60 px-6 py-3 text-sm font-medium text-gold-400 hover:border-gold-400 hover:text-gold-300"
+                className="text-sm font-medium text-gold-400 underline-offset-4 hover:text-gold-300 hover:underline"
               >
                 Read sample
               </button>
             )}
-
-            {!user && <span className="text-sm text-ivory/40">Sign in to buy or read this title.</span>}
           </div>
+
+          {!user && <p className="mt-2 text-sm text-ivory/40">Sign in to buy or read this title.</p>}
+
+          {/* Book details row — always shows Format/Category (already
+              hinted at by the badges above, but spelled out here for
+              scannability), plus page count / publish year when the
+              book record has them. */}
+          <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-ivory/60">
+            {book.fileType && (
+              <div className="flex gap-1.5">
+                <dt className="text-ivory/40">Format:</dt>
+                <dd>{book.fileType.toUpperCase()}</dd>
+              </div>
+            )}
+            {book.category && (
+              <div className="flex gap-1.5">
+                <dt className="text-ivory/40">Category:</dt>
+                <dd>{book.category}</dd>
+              </div>
+            )}
+            {book.pageCount && (
+              <div className="flex gap-1.5">
+                <dt className="text-ivory/40">Length:</dt>
+                <dd>{book.pageCount} pages</dd>
+              </div>
+            )}
+            {book.publishedAt && (
+              <div className="flex gap-1.5">
+                <dt className="text-ivory/40">Published:</dt>
+                <dd>{new Date(book.publishedAt).getFullYear()}</dd>
+              </div>
+            )}
+          </dl>
+
+          {/* Typography Description View Box */}
+          <p className="mt-6 max-w-2xl text-base leading-relaxed text-ivory/80 whitespace-pre-line tracking-wide">
+            {book.description}
+          </p>
 
           {!user && (
             <p className="mt-4 text-sm text-ivory/50">
