@@ -5,13 +5,26 @@ import ePub from "epubjs";
 // react-pdf needs a worker; load it from a CDN matching the installed pdfjs-dist version.
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
+// How much of the viewport height the PDF page is allowed to fill. Leaves
+// room for the download button, page controls, and surrounding page chrome
+// so the whole page (not just its top) is visible without excess scrolling.
+const MAX_HEIGHT_RATIO = 0.7;
+
 // Renders a PDF or EPUB given a signed { url, fileType }. Used by both the
 // full Reader page (owned books) and the SampleReader page (preview files),
 // so the two never drift apart in how they render content.
 export default function BookViewer({ url, fileType, downloadable = true }) {
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
-  const [pageWidth, setPageWidth] = useState(720);
+  const [containerWidth, setContainerWidth] = useState(720);
+  // Natural height/width ratio of the loaded PDF page. Unknown until the
+  // first page finishes loading, since it depends on how the source PDF
+  // was authored (a tall cover page has a very different ratio than a
+  // standard letter/A4 page).
+  const [pageAspect, setPageAspect] = useState(null);
+  const [viewportHeight, setViewportHeight] = useState(
+    typeof window !== "undefined" ? window.innerHeight : 900
+  );
   const epubContainerRef = useRef(null);
   const renditionRef = useRef(null);
   const pdfContainerRef = useRef(null);
@@ -38,7 +51,7 @@ export default function BookViewer({ url, fileType, downloadable = true }) {
     const updateWidth = () => {
       if (pdfContainerRef.current) {
         // Cap at 800px so pages don't stretch too wide on large monitors
-        setPageWidth(Math.min(pdfContainerRef.current.clientWidth, 800));
+        setContainerWidth(Math.min(pdfContainerRef.current.clientWidth, 800));
       }
     };
 
@@ -49,6 +62,30 @@ export default function BookViewer({ url, fileType, downloadable = true }) {
 
     return () => observer.disconnect();
   }, [url]);
+
+  // Track the viewport height so the height-based cap below stays correct
+  // on rotation/resize (e.g. switching between portrait and landscape).
+  useEffect(() => {
+    const updateHeight = () => setViewportHeight(window.innerHeight);
+    window.addEventListener("resize", updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
+  }, []);
+
+  // Reset the known aspect ratio whenever the file or page changes, so a
+  // stale ratio from a previous page/document can't briefly mis-size the
+  // next one before its own onLoadSuccess fires.
+  useEffect(() => {
+    setPageAspect(null);
+  }, [url, pageNumber]);
+
+  // Fit-to-screen: render at whichever is smaller of "as wide as the
+  // container allows" or "as wide as it can be while still fitting within
+  // MAX_HEIGHT_RATIO of the viewport height". Falls back to the plain
+  // width-based size until the page has loaded once and we know its
+  // natural aspect ratio.
+  const maxHeight = viewportHeight * MAX_HEIGHT_RATIO;
+  const widthFromHeightCap = pageAspect ? maxHeight / pageAspect : Infinity;
+  const pageWidth = Math.min(containerWidth, widthFromHeightCap);
 
   return (
     <div>
@@ -66,13 +103,19 @@ export default function BookViewer({ url, fileType, downloadable = true }) {
 
       {fileType === "pdf" ? (
         <div ref={pdfContainerRef} className="rounded-md bg-navy-900 p-4">
-          <div className="flex justify-center overflow-x-auto">
+          <div className="flex max-h-[80vh] justify-center overflow-auto">
             <Document
               file={url}
               onLoadSuccess={({ numPages }) => setNumPages(numPages)}
               loading={<p className="text-ivory/50">Loading PDF…</p>}
             >
-              <Page pageNumber={pageNumber} width={pageWidth} />
+              <Page
+                pageNumber={pageNumber}
+                width={pageWidth}
+                onLoadSuccess={(page) =>
+                  setPageAspect(page.originalHeight / page.originalWidth)
+                }
+              />
             </Document>
           </div>
           {numPages && (
