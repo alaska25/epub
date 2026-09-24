@@ -7,8 +7,6 @@
 // your Cart link/icon in the navbar). If several exist (desktop + mobile
 // nav), the first visible one is used.
 
-const THUMB_SIZE = 72; // size of the flying thumbnail in px
-
 function findCartTarget() {
   const candidates = document.querySelectorAll("[data-cart-target]");
   for (const el of candidates) {
@@ -32,10 +30,21 @@ function bump(target) {
 
 export function flyToCart(sourceImg, { duration = 750 } = {}) {
   const target = findCartTarget();
-  if (!sourceImg || !target) return;
+
+  if (!sourceImg) {
+    console.warn("[flyToCart] No source image element was passed in.");
+    return;
+  }
+  if (!target) {
+    console.warn(
+      "[flyToCart] No visible element with data-cart-target found. Add it to the Cart link in Navbar.jsx."
+    );
+    return;
+  }
 
   // Respect reduced-motion: skip the flight, keep the small bump.
   if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    console.info("[flyToCart] 'Reduce motion' is on in your OS, so only the bump plays.");
     bump(target);
     return;
   }
@@ -43,14 +52,21 @@ export function flyToCart(sourceImg, { duration = 750 } = {}) {
   const from = sourceImg.getBoundingClientRect();
   const to = target.getBoundingClientRect();
 
-  const startX = from.left + from.width / 2 - THUMB_SIZE / 2;
-  const startY = from.top + from.height / 2 - THUMB_SIZE / 2;
-  const endX = to.left + to.width / 2 - THUMB_SIZE / 2;
-  const endY = to.top + to.height / 2 - THUMB_SIZE / 2;
+  // Size the flying cover relative to the card so it looks right on small
+  // phone grids (narrow cards) and on desktop. Book-cover proportions (2:3).
+  const thumbW = Math.round(Math.min(72, Math.max(44, from.width * 0.5)));
+  const thumbH = Math.round(thumbW * 1.5);
 
-  // Control point for a curved (quadratic Bezier) path: an arc above both points.
+  const startX = from.left + from.width / 2 - thumbW / 2;
+  const startY = from.top + from.height / 2 - thumbH / 2;
+  const endX = to.left + to.width / 2 - thumbW / 2;
+  const endY = to.top + to.height / 2 - thumbH / 2;
+
+  // Curved (quadratic Bezier) path. The arc height scales with the distance
+  // so it never swings off the top of a short phone screen.
+  const lift = Math.min(140, Math.max(60, Math.abs(startY - endY) * 0.4));
   const ctrlX = (startX + endX) / 2;
-  const ctrlY = Math.min(startY, endY) - 140;
+  const ctrlY = Math.min(startY, endY) - lift;
 
   const ghost = sourceImg.cloneNode(false);
   ghost.removeAttribute("class");
@@ -62,10 +78,10 @@ export function flyToCart(sourceImg, { duration = 750 } = {}) {
     position: "fixed",
     left: "0px",
     top: "0px",
-    width: `${THUMB_SIZE}px`,
-    height: `${THUMB_SIZE}px`,
+    width: `${thumbW}px`,
+    height: `${thumbH}px`,
     objectFit: "cover",
-    borderRadius: "12px",
+    borderRadius: "8px",
     boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
     pointerEvents: "none",
     zIndex: "9999",
@@ -85,7 +101,7 @@ export function flyToCart(sourceImg, { duration = 750 } = {}) {
     const rotate = 20 * t;
     frames.push({
       transform: `translate(${x}px, ${y}px) scale(${scale}) rotate(${rotate}deg)`,
-      opacity: t > 0.85 ? 1 - (t - 0.85) / 0.15 * 0.6 : 1,
+      opacity: t > 0.85 ? 1 - ((t - 0.85) / 0.15) * 0.6 : 1,
     });
   }
 
@@ -95,10 +111,9 @@ export function flyToCart(sourceImg, { duration = 750 } = {}) {
     fill: "forwards",
   });
 
-  const done = () => {
+  anim.onfinish = () => {
     ghost.remove();
     bump(target);
   };
-  anim.onfinish = done;
   anim.oncancel = () => ghost.remove();
 }

@@ -60,7 +60,7 @@ export default function Navbar() {
           <Link to="/catalog" className="text-ivory/80 hover:text-gold-400">Catalog</Link>
           {user && <Link to="/library" className="text-ivory/80 hover:text-gold-400">My Library</Link>}
           {isAdmin && <Link to="/admin" className="text-ivory/80 hover:text-gold-400">Admin</Link>}
-          <Link to="/cart" className="relative text-ivory/80 hover:text-gold-400">
+          <Link to="/cart" data-cart-target className="relative text-ivory/80 hover:text-gold-400">
             Cart
             {items.length > 0 && (
               <span className="absolute -right-3 -top-2 rounded-full bg-gold-500 px-1.5 text-[11px] font-semibold text-ink">
@@ -79,7 +79,7 @@ export default function Navbar() {
 
         {/* Mobile: cart badge + hamburger toggle, visible below md: */}
         <div className="ml-auto flex items-center gap-4 md:hidden">
-          <Link to="/cart" className="relative text-ivory/80">
+          <Link to="/cart" data-cart-target className="relative text-ivory/80">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.994-4.593 2.649-6.75H5.106M7.5 14.25L5.106 5.272M7.5 14.25L5.106 5.272m0 0L4.5 2.25M6 18.75a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm9 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
             </svg>
