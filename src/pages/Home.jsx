@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import api from "../api/axios.js";
-// Note: Link is no longer used here since BookCarousel now owns its own
-// "View all books" link — remove this comment if you reintroduce it elsewhere.
 import HeroCarousel from "../components/HeroCarousel.jsx";
 import BookCarousel from "../components/BookCarousel.jsx";
 
@@ -52,6 +50,57 @@ const FEATURES = [
   },
 ];
 
+// Reusable scroll-reveal hook: returns a ref to attach and whether the
+// element has entered the viewport. Fires once, then disconnects.
+function useInView(options = {}) {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          // Wait one frame so the browser paints the initial hidden
+          // state before we flip to visible — otherwise, if the
+          // element is already near the viewport on load, the
+          // transition can fire before the first paint and just
+          // "pop in" with no visible animation.
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => setInView(true));
+          });
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15, ...options }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return [ref, inView];
+}
+
+// Wrapper that applies the fade/slide-up transition based on inView state
+function Reveal({ children, className = "", delay = 0 }) {
+  const [ref, inView] = useInView();
+
+  return (
+    <div
+      ref={ref}
+      style={{ transitionDelay: inView ? `${delay}ms` : "0ms" }}
+      className={`transition-all duration-700 ease-out ${
+        inView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+      } ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
 export default function Home() {
   const [featured, setFeatured] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,12 +134,10 @@ export default function Home() {
 
   return (
     <div>
-      {/* Hero */}
+      {/* Hero — stays as-is, it's above the fold so no reveal needed */}
       <HeroCarousel />
 
-      {/* Featured books — BookCarousel owns its own "Featured Books" header
-          and "View all books" link, so Home only handles loading/empty states
-          here and lets the carousel render itself once books are ready. */}
+      {/* Featured books */}
       {loading ? (
         <div className="mx-auto max-w-6xl px-6 py-16">
           <p className="text-ivory/50">Loading books…</p>
@@ -100,36 +147,37 @@ export default function Home() {
           <p className="text-ivory/50">No books yet — check back soon.</p>
         </div>
       ) : (
-        <BookCarousel books={featured} />
+        <Reveal>
+          <BookCarousel books={featured} />
+        </Reveal>
       )}
 
       {/* Trust features */}
       <section className="border-t border-navy-700/60 bg-navy-900/40">
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-12 md:grid-cols-4">
-          {FEATURES.map((f) => (
-            <div
-              key={f.title}
-              className="rounded-lg border border-navy-700/60 p-5 text-center"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                className="mx-auto h-8 w-8 text-gold-400"
-              >
-                {f.icon}
-              </svg>
-              <p className="mt-3 font-display text-base text-ivory">{f.title}</p>
-              <p className="mt-1 text-sm text-ivory/50">{f.description}</p>
-            </div>
+          {FEATURES.map((f, i) => (
+            <Reveal key={f.title} delay={i * 100}>
+              <div className="group h-full rounded-lg border border-navy-700/60 p-5 text-center transition-all duration-300 hover:-translate-y-1 hover:border-gold-500/50 hover:bg-navy-900/60 hover:shadow-lg hover:shadow-navy-900/50">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  className="mx-auto h-8 w-8 text-gold-400 transition-transform duration-300 group-hover:scale-110"
+                >
+                  {f.icon}
+                </svg>
+                <p className="mt-3 font-display text-base text-ivory">{f.title}</p>
+                <p className="mt-1 text-sm text-ivory/50">{f.description}</p>
+              </div>
+            </Reveal>
           ))}
         </div>
       </section>
 
       {/* Newsletter */}
       <section className="border-t border-navy-700/60">
-        <div className="mx-auto max-w-3xl px-6 py-16 text-center">
+        <Reveal className="mx-auto max-w-3xl px-6 py-16 text-center">
           <p className="text-sm font-medium uppercase tracking-widest text-gold-500/80">
             Stay Updated
           </p>
@@ -156,14 +204,14 @@ export default function Home() {
             <button
               type="submit"
               disabled={subscribing}
-              className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400 disabled:opacity-50"
+              className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink transition-all duration-200 hover:bg-gold-400 hover:shadow-md hover:shadow-gold-500/30 active:scale-95 disabled:opacity-50 disabled:hover:shadow-none"
             >
               {subscribing ? "Subscribing…" : "Subscribe"}
             </button>
           </form>
 
           {subStatus && <p className="mt-3 text-sm text-gold-400">{subStatus}</p>}
-        </div>
+        </Reveal>
       </section>
     </div>
   );
