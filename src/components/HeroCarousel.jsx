@@ -40,6 +40,58 @@ const AUTO_ADVANCE_MS = 6500;
 const FOCUS_RING =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400";
 
+// Arrows + dots. "overlay" sits on top of the mobile photo (fixed white
+// colors so it reads over any image); "inline" is the desktop version below
+// the text, using the site's theme colors.
+function Controls({ index, count, onPrev, onNext, onGo, variant }) {
+  const overlay = variant === "overlay";
+
+  const arrowClass = overlay
+    ? "rounded-full p-2 text-white/90 hover:text-white"
+    : "rounded-full border border-ivory/30 bg-ink/50 p-2 text-ivory/70 backdrop-blur-sm hover:border-gold-500 hover:text-gold-400";
+  const dotOn = overlay ? "w-6 bg-white" : "w-6 bg-gold-500";
+  const dotOff = overlay ? "w-2 bg-white/50" : "w-2 bg-ivory/30 group-hover:bg-ivory/50";
+
+  return (
+    <div
+      className={
+        overlay
+          ? "flex items-center gap-1 rounded-full bg-black/40 px-1.5 text-white backdrop-blur-md"
+          : "flex items-center gap-4"
+      }
+    >
+      <button onClick={onPrev} aria-label="Previous slide" className={`${arrowClass} ${FOCUS_RING}`}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+
+      <div className="flex items-center">
+        {Array.from({ length: count }, (_, i) => (
+          <button
+            key={i}
+            onClick={() => onGo(i)}
+            aria-label={`Go to slide ${i + 1}`}
+            aria-current={i === index}
+            // Padding makes the tap target ~24px tall while the dot stays 8px
+            className={`group rounded-full px-1 py-2 ${FOCUS_RING}`}
+          >
+            <span
+              className={`block h-2 rounded-full transition-all ${i === index ? dotOn : dotOff}`}
+            />
+          </button>
+        ))}
+      </div>
+
+      <button onClick={onNext} aria-label="Next slide" className={`${arrowClass} ${FOCUS_RING}`}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
 export default function HeroCarousel() {
   const [index, setIndex] = useState(0);
   const timerRef = useRef(null);
@@ -58,11 +110,17 @@ export default function HeroCarousel() {
     setIndex(nextIndex);
   };
 
+  const controlProps = {
+    index,
+    count: SLIDES.length,
+    onPrev: () => goTo(index - 1),
+    onNext: () => goTo(index + 1),
+    onGo: goTo,
+  };
+
   return (
     <section className="relative overflow-hidden border-b border-navy-700/60 bg-ink">
-      {/* Full-bleed background image: desktop/tablet only (md and up).
-          On mobile the image renders in normal flow instead, see below,
-          so it can never collide with the text. */}
+      {/* Full-bleed background image: desktop/tablet only (md and up). */}
       <div className="hidden md:block">
         {SLIDES.map((s, i) => (
           <div
@@ -79,8 +137,27 @@ export default function HeroCarousel() {
         <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/90 to-ink/20 pointer-events-none" />
       </div>
 
-      <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-6 py-10 md:min-h-[560px] md:grid-cols-[1.2fr,1fr] md:py-20">
+      <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-6 pb-12 pt-6 md:min-h-[560px] md:grid-cols-[1.2fr,1fr] md:py-20">
         <div>
+          {/* MOBILE: photo first, with the arrows and dots overlaid on it so
+              they're visible without scrolling. Any extra height from the
+              taller slides ends up as space at the bottom of the hero. */}
+          <div className="relative mb-6 h-56 overflow-hidden rounded-2xl shadow-lg ring-1 ring-black/5 sm:h-72 md:hidden">
+            {SLIDES.map((s, i) => (
+              <img
+                key={s.image}
+                src={s.image}
+                alt=""
+                className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 motion-reduce:transition-none ${
+                  i === index ? "opacity-100" : "opacity-0"
+                }`}
+              />
+            ))}
+            <div className="absolute inset-x-0 bottom-3 flex justify-center">
+              <Controls {...controlProps} variant="overlay" />
+            </div>
+          </div>
+
           {/* All slides share ONE grid cell, so this block is always as tall
               as the tallest slide and nothing below the carousel moves.
               Inactive slides are `invisible`, which also removes their links
@@ -100,43 +177,32 @@ export default function HeroCarousel() {
                       : "invisible translate-y-2 opacity-0"
                   }`}
                 >
-                  {/* Eyebrow: a quiet pill in sentence case, not tracked caps */}
-                  <p className="inline-flex max-w-full items-center gap-2 rounded-full border border-ivory/15 bg-ivory/5 px-3 py-1.5 text-xs font-medium text-ivory/80 backdrop-blur-sm">
+                  {/* Eyebrow: rounded-3xl (not -full) so a wrapped two-line
+                      label on phones doesn't turn into a blob */}
+                  <p className="inline-flex max-w-full items-center gap-2 rounded-3xl border border-ivory/15 bg-ivory/5 px-3 py-1.5 text-xs font-medium text-ivory/80 backdrop-blur-sm">
                     <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold-500" />
                     {s.eyebrow}
                   </p>
 
-                  {/* Headline: heavy sans, tight tracking and leading, one
-                      color, balanced line breaks */}
-                  <Heading className="mt-5 font-sans text-4xl font-bold leading-[1.05] tracking-[-0.035em] text-ivory [text-wrap:balance] sm:text-5xl md:text-6xl">
+                  <Heading className="mt-4 font-sans text-4xl font-bold leading-[1.05] tracking-[-0.035em] text-ivory [text-wrap:balance] sm:text-5xl md:mt-5 md:text-6xl">
                     {s.title} {s.highlight}
                   </Heading>
 
-                  {/* Mobile-only image: sits in normal document flow between
-                      the heading and body copy, so it can never overlap text.
-                      Hidden on md+ where the full-bleed background is used. */}
-                  <div className="relative mt-6 h-56 overflow-hidden rounded-2xl shadow-lg ring-1 ring-black/5 sm:h-64 md:hidden">
-                    <img
-                      src={s.image}
-                      alt=""
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                  </div>
-
-                  <p className="mt-6 max-w-[34rem] text-base leading-relaxed text-ivory/75 md:text-lg">
+                  <p className="mt-4 max-w-[34rem] text-base leading-relaxed text-ivory/75 md:mt-6 md:text-lg">
                     {s.body}
                   </p>
 
-                  <div className="mt-8 flex flex-wrap items-center gap-3">
+                  {/* Full-width stacked buttons on phones, inline from sm up */}
+                  <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center md:mt-8">
                     <InfoLink
                       to={s.primaryCta.to}
-                      className={`rounded-full bg-gold-500 px-6 py-3 text-sm font-semibold text-ink shadow-lg shadow-gold-500/20 transition hover:bg-gold-400 active:scale-[0.98] ${FOCUS_RING}`}
+                      className={`w-full rounded-full bg-gold-500 px-6 py-3 text-center text-sm font-semibold text-ink shadow-lg shadow-gold-500/20 transition hover:bg-gold-400 active:scale-[0.98] sm:w-auto ${FOCUS_RING}`}
                     >
                       {s.primaryCta.label}
                     </InfoLink>
                     <InfoLink
                       to={s.secondaryCta.to}
-                      className={`rounded-full border border-ivory/25 px-6 py-3 text-sm font-semibold text-ivory/90 transition hover:border-gold-500 hover:text-gold-400 active:scale-[0.98] ${FOCUS_RING}`}
+                      className={`w-full rounded-full border border-ivory/25 px-6 py-3 text-center text-sm font-semibold text-ivory/90 transition hover:border-gold-500 hover:text-gold-400 active:scale-[0.98] sm:w-auto ${FOCUS_RING}`}
                     >
                       {s.secondaryCta.label}
                     </InfoLink>
@@ -148,41 +214,9 @@ export default function HeroCarousel() {
             })}
           </div>
 
-          {/* Dots + inline arrows: always visible, all screen sizes */}
-          <div className="mt-10 flex items-center gap-4">
-            <button
-              onClick={() => goTo(index - 1)}
-              aria-label="Previous slide"
-              className={`rounded-full border border-ivory/30 bg-ink/50 p-2 text-ivory/70 backdrop-blur-sm hover:border-gold-500 hover:text-gold-400 ${FOCUS_RING}`}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-
-            <div className="flex gap-2">
-              {SLIDES.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => goTo(i)}
-                  aria-label={`Go to slide ${i + 1}`}
-                  aria-current={i === index}
-                  className={`h-2 rounded-full transition-all ${FOCUS_RING} ${
-                    i === index ? "w-6 bg-gold-500" : "w-2 bg-ivory/30 hover:bg-ivory/50"
-                  }`}
-                />
-              ))}
-            </div>
-
-            <button
-              onClick={() => goTo(index + 1)}
-              aria-label="Next slide"
-              className={`rounded-full border border-ivory/30 bg-ink/50 p-2 text-ivory/70 backdrop-blur-sm hover:border-gold-500 hover:text-gold-400 ${FOCUS_RING}`}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
+          {/* DESKTOP: arrows + dots below the text */}
+          <div className="mt-10 hidden md:block">
+            <Controls {...controlProps} variant="inline" />
           </div>
         </div>
       </div>
