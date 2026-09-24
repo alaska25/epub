@@ -4,6 +4,7 @@ import api from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import StarRating from "../components/StarRating.jsx";
+import BackButton from "../components/BackButton.jsx";
 
 export default function BookDetail() {
   const { id } = useParams();
@@ -156,7 +157,12 @@ export default function BookDetail() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-16">
+    <div className="mx-auto max-w-5xl px-6 pb-16 pt-8">
+      {/* Goes back to wherever the visitor came from (catalog, home
+          carousel, search…). Falls back to the catalog if the page was
+          opened directly, e.g. from a shared link. */}
+      <BackButton fallback="/catalog" className="mb-8" />
+
       {/* Top Section: Main Book Information Grid */}
       <div className="grid gap-12 md:grid-cols-[280px,1fr]">
         <div className="w-full">
