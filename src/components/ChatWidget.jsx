@@ -69,14 +69,13 @@ export default function ChatWidget() {
     <>
       {open && (
         <div
-          className="fixed inset-0 z-50 flex flex-col bg-navy-900 sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[28rem] sm:w-80 sm:overflow-hidden sm:rounded-lg sm:border sm:border-navy-700 sm:shadow-2xl sm:shadow-black/50 sm:w-96"
-          style={{
-            // Use dvh as the baseline (resizes with the keyboard on modern
-            // mobile browsers), then override with the live visualViewport
-            // measurement when we have one, as a fallback for browsers
-            // where dvh alone doesn't track the keyboard reliably.
-            height: viewportHeight ? `${viewportHeight}px` : "100dvh",
-          }}
+          // Height comes from the --chat-h CSS variable on mobile (live
+          // visualViewport height, falling back to 100dvh). From the sm
+          // breakpoint up, sm:h-[28rem] takes over. Setting `height` as an
+          // inline style would override that class on desktop and push the
+          // top of the panel off-screen, so only the variable is set inline.
+          className="fixed inset-0 z-50 flex h-[var(--chat-h,100dvh)] flex-col bg-navy-900 sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[28rem] sm:w-96 sm:overflow-hidden sm:rounded-lg sm:border sm:border-navy-700 sm:shadow-2xl sm:shadow-black/50"
+          style={viewportHeight ? { "--chat-h": `${viewportHeight}px` } : undefined}
         >
           <div className="flex items-center justify-between border-b border-navy-700/60 bg-navy-800 px-4 py-3">
             <p className="font-display text-sm text-ivory">Adyoolau Support</p>
@@ -89,7 +88,8 @@ export default function ChatWidget() {
             </button>
           </div>
 
-          <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+          {/* min-h-0 lets this flex child shrink so only the message list scrolls */}
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
             {messages.map((m, i) => (
               <div
                 key={i}
@@ -111,7 +111,10 @@ export default function ChatWidget() {
             <div ref={messagesEndRef} />
           </div>
 
-          <form onSubmit={handleSend} className="border-t border-navy-700/60 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <form
+            onSubmit={handleSend}
+            className="shrink-0 border-t border-navy-700/60 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+          >
             <div className="flex gap-2">
               <input
                 type="text"
