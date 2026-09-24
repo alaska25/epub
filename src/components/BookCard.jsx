@@ -1,11 +1,18 @@
+import { useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
+import { flyToCart } from "../utils/flyToCart.js";
 import StarRating from "./StarRating.jsx";
+
+// Must match the default `duration` in flyToCart.js (750ms).
+const FLIGHT_MS = 750;
 
 export default function BookCard({ book, showAddToCart = false, compact = false }) {
   const { items, addItem } = useCart();
   const navigate = useNavigate();
   const inCart = items.some((b) => b._id === book._id);
+  const imgRef = useRef(null);
+  const pendingRef = useRef(false); // true while a cover is mid-flight
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -14,13 +21,24 @@ export default function BookCard({ book, showAddToCart = false, compact = false 
       navigate(`/book/${book._id}`);
       return;
     }
-    if (!inCart) addItem(book);
+    if (inCart || pendingRef.current) return;
+
+    pendingRef.current = true;
+    flyToCart(imgRef.current);
+
+    // Add when the cover lands, so the badge count changes on arrival
+    // instead of on click.
+    setTimeout(() => {
+      addItem(book);
+      pendingRef.current = false;
+    }, FLIGHT_MS);
   };
 
   return (
     <Link to={`/book/${book._id}`} className="group block w-full text-left">
       <div className="relative aspect-[2/3] w-full overflow-hidden rounded-md bg-navy-800">
         <img
+          ref={imgRef}
           src={book.coverUrl}
           alt={`Cover of ${book.title}`}
           className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
