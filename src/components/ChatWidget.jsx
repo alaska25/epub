@@ -13,13 +13,18 @@ export default function ChatWidget() {
   // sit above the on-screen keyboard instead of being covered by it. Falls
   // back to null (no override) on browsers without the visualViewport API.
   const [viewportHeight, setViewportHeight] = useState(null);
+  // Fallback for in-app browsers (e.g. Messenger's WebView) that don't report
+  // the keyboard at all: when the input is focused and nothing shrank, cap
+  // the panel to the top half of the screen so the input stays visible.
+  const [compact, setCompact] = useState(false);
+  const baseHeightRef = useRef(0); // full window height before any keyboard
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     if (open) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, open]);
+  }, [messages, open, compact, viewportHeight]);
 
   // Keep the panel's height in sync with the actual visible viewport while
   // it's open, so opening the keyboard shrinks the panel (keeping the input
@@ -27,7 +32,12 @@ export default function ChatWidget() {
   // fixed-size box. This only matters on mobile, where the floating-card
   // layout below is replaced by a full-screen one anyway.
   useEffect(() => {
-    if (!open || typeof window === "undefined" || !window.visualViewport) return;
+    if (!open || typeof window === "undefined") return;
+
+    // Remember the height before any keyboard appears.
+    baseHeightRef.current = window.innerHeight;
+
+    if (!window.visualViewport) return;
 
     const vv = window.visualViewport;
     const updateHeight = () => setViewportHeight(vv.height);
@@ -40,6 +50,20 @@ export default function ChatWidget() {
       vv.removeEventListener("scroll", updateHeight);
     };
   }, [open]);
+
+  const handleFocus = () => {
+    // Give the browser a moment to react to the keyboard, then check whether
+    // it actually shrank anything. If not, switch to the compact fallback.
+    setTimeout(() => {
+      const base = baseHeightRef.current;
+      const visible = window.visualViewport?.height ?? window.innerHeight;
+      const keyboardDetected =
+        visible < base - 100 || window.innerHeight < base - 100;
+      setCompact(!keyboardDetected && window.innerWidth < 640);
+    }, 400);
+  };
+
+  const handleBlur = () => setCompact(false);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -65,17 +89,23 @@ export default function ChatWidget() {
     }
   };
 
+  // In compact mode use ~half the screen (keyboards usually take 35-45%).
+  // Otherwise use the live visualViewport height, if we have one.
+  const panelHeight = compact
+    ? Math.round(baseHeightRef.current * 0.5)
+    : viewportHeight;
+
   return (
     <>
       {open && (
         <div
           // Height comes from the --chat-h CSS variable on mobile (live
-          // visualViewport height, falling back to 100dvh). From the sm
-          // breakpoint up, sm:h-[28rem] takes over. Setting `height` as an
+          // visualViewport height, the compact fallback, or 100dvh). From the
+          // sm breakpoint up, sm:h-[28rem] takes over. Setting `height` as an
           // inline style would override that class on desktop and push the
           // top of the panel off-screen, so only the variable is set inline.
           className="fixed inset-0 z-50 flex h-[var(--chat-h,100dvh)] flex-col bg-navy-900 sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[28rem] sm:w-96 sm:overflow-hidden sm:rounded-lg sm:border sm:border-navy-700 sm:shadow-2xl sm:shadow-black/50"
-          style={viewportHeight ? { "--chat-h": `${viewportHeight}px` } : undefined}
+          style={panelHeight ? { "--chat-h": `${panelHeight}px` } : undefined}
         >
           <div className="flex items-center justify-between border-b border-navy-700/60 bg-navy-800 px-4 py-3">
             <p className="font-display text-sm text-ivory">Adyoolau Support</p>
@@ -120,11 +150,16 @@ export default function ChatWidget() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
                 placeholder="Ask a question…"
                 className="flex-1 rounded-full border border-navy-700 bg-navy-900 px-4 py-2 text-sm text-ivory placeholder:text-ivory/40 focus:border-gold-500"
               />
               <button
                 type="submit"
+                // Keeps focus in the input when tapping Send, so the keyboard
+                // stays open and the panel doesn't resize mid-tap.
+                onMouseDown={(e) => e.preventDefault()}
                 disabled={sending || !input.trim()}
                 className="rounded-full bg-gold-500 px-4 py-2 text-sm font-medium text-ink hover:bg-gold-400 disabled:opacity-50"
               >
