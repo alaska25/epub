@@ -55,8 +55,6 @@ export default function HeroCarousel() {
     setIndex(nextIndex);
   };
 
-  const slide = SLIDES[index];
-
   return (
     <section className="relative overflow-hidden border-b border-navy-700/60 bg-ink">
       {/* Full-bleed background image: desktop/tablet only (md and up).
@@ -78,46 +76,62 @@ export default function HeroCarousel() {
 
       <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-6 py-10 md:min-h-[560px] md:grid-cols-[1.2fr,1fr] md:py-20">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-500">
-            {slide.eyebrow}
-          </p>
-          <h1 className="mt-4 font-display text-4xl leading-[1.1] text-ivory sm:text-5xl md:text-6xl">
-            {slide.title} <span className="text-gold-400">{slide.highlight}</span>
-          </h1>
+          {/* All slides share ONE grid cell (col-start-1 row-start-1), so this
+              block is always as tall as the tallest slide. Switching slides
+              only changes opacity, never the layout height, so nothing below
+              the carousel moves. Inactive slides are `invisible`, which also
+              removes their links from the tab order and screen readers. */}
+          <div className="grid">
+            {SLIDES.map((s, i) => {
+              const isActive = i === index;
+              // Only the first slide is the page's h1; the rest are h2s
+              const Heading = i === 0 ? "h1" : "h2";
 
-          {/* Mobile-only image: sits in normal document flow between the
-              heading and body copy, so it can never overlap text. Hidden
-              on md+ where the full-bleed background image is used instead. */}
-          <div className="relative mt-6 h-56 overflow-hidden rounded-2xl shadow-lg ring-1 ring-black/5 sm:h-64 md:hidden">
-            {SLIDES.map((s, i) => (
-              <img
-                key={s.image}
-                src={s.image}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover transition-opacity duration-1000"
-                style={{ opacity: i === index ? 1 : 0 }}
-              />
-            ))}
-          </div>
+              return (
+                <div
+                  key={s.title}
+                  className={`col-start-1 row-start-1 transition-[opacity,visibility] duration-500 ${
+                    isActive ? "visible opacity-100" : "invisible opacity-0"
+                  }`}
+                >
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-500">
+                    {s.eyebrow}
+                  </p>
+                  <Heading className="mt-4 font-display text-4xl leading-[1.1] text-ivory sm:text-5xl md:text-6xl">
+                    {s.title} <span className="text-gold-400">{s.highlight}</span>
+                  </Heading>
 
-          <p className="mt-6 max-w-md text-base text-ivory/70 md:text-lg">{slide.body}</p>
-          <div className="mt-6 flex flex-wrap items-center gap-4">
-            <Link
-              to={slide.primaryCta.to}
-              className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400"
-            >
-              {slide.primaryCta.label}
-            </Link>
-            <Link
-              to={slide.secondaryCta.to}
-              className="text-sm font-medium text-ivory/60 underline underline-offset-4 hover:text-gold-500 md:rounded-full md:border md:border-ivory/30 md:px-6 md:py-3 md:text-ivory/90 md:no-underline md:hover:border-gold-500 md:hover:text-gold-400"
-            >
-              {slide.secondaryCta.label}
-            </Link>
+                  {/* Mobile-only image: sits in normal document flow between
+                      the heading and body copy, so it can never overlap text.
+                      Hidden on md+ where the full-bleed background is used. */}
+                  <div className="relative mt-6 h-56 overflow-hidden rounded-2xl shadow-lg ring-1 ring-black/5 sm:h-64 md:hidden">
+                    <img
+                      src={s.image}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  </div>
+
+                  <p className="mt-6 max-w-md text-base text-ivory/70 md:text-lg">{s.body}</p>
+                  <div className="mt-6 flex flex-wrap items-center gap-4">
+                    <Link
+                      to={s.primaryCta.to}
+                      className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400"
+                    >
+                      {s.primaryCta.label}
+                    </Link>
+                    <Link
+                      to={s.secondaryCta.to}
+                      className="text-sm font-medium text-ivory/60 underline underline-offset-4 hover:text-gold-500 md:rounded-full md:border md:border-ivory/30 md:px-6 md:py-3 md:text-ivory/90 md:no-underline md:hover:border-gold-500 md:hover:text-gold-400"
+                    >
+                      {s.secondaryCta.label}
+                    </Link>
+                  </div>
+                  {s.note && <p className="mt-3 text-xs text-ivory/50">{s.note}</p>}
+                </div>
+              );
+            })}
           </div>
-          {slide.note && (
-            <p className="mt-3 text-xs text-ivory/50">{slide.note}</p>
-          )}
 
           {/* Dots + inline arrows: always visible, all screen sizes */}
           <div className="mt-10 flex items-center gap-4">
