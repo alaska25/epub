@@ -110,7 +110,7 @@ export default function Modal({ open, onClose, title, children }) {
         }`}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-navy-700/60 bg-navy-800 px-5 py-3">
-          <h2 id={titleId} className="font-display text-base text-ivory">
+          <h2 id={titleId} className="text-base font-semibold tracking-tight text-ivory">
             {title}
           </h2>
           <button

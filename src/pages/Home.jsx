@@ -50,6 +50,9 @@ const FEATURES = [
   },
 ];
 
+const FOCUS_RING =
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400";
+
 // Reusable scroll-reveal hook: returns a ref to attach and whether the
 // element has entered the viewport. Fires once, then disconnects.
 function useInView(options = {}) {
@@ -84,7 +87,8 @@ function useInView(options = {}) {
   return [ref, inView];
 }
 
-// Wrapper that applies the fade/slide-up transition based on inView state
+// Wrapper that applies the fade/slide-up transition based on inView state.
+// Transitions are skipped for users who prefer reduced motion.
 function Reveal({ children, className = "", delay = 0 }) {
   const [ref, inView] = useInView();
 
@@ -92,7 +96,7 @@ function Reveal({ children, className = "", delay = 0 }) {
     <div
       ref={ref}
       style={{ transitionDelay: inView ? `${delay}ms` : "0ms" }}
-      className={`transition-all duration-700 ease-out ${
+      className={`transition-[opacity,transform] duration-700 ease-out motion-reduce:transition-none ${
         inView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
       } ${className}`}
     >
@@ -157,18 +161,21 @@ export default function Home() {
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-12 md:grid-cols-4">
           {FEATURES.map((f, i) => (
             <Reveal key={f.title} delay={i * 100}>
-              <div className="group h-full rounded-lg border border-navy-700/60 p-5 text-center transition-all duration-300 hover:-translate-y-1 hover:border-gold-500/50 hover:bg-navy-900/60 hover:shadow-lg hover:shadow-navy-900/50">
+              <div className="group h-full rounded-lg border border-navy-700/60 p-5 text-center transition-all duration-300 hover:-translate-y-1 hover:border-gold-500/50 hover:bg-navy-900/60 hover:shadow-lg hover:shadow-navy-900/50 motion-reduce:transition-none motion-reduce:hover:translate-y-0">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.5"
-                  className="mx-auto h-8 w-8 text-gold-400 transition-transform duration-300 group-hover:scale-110"
+                  aria-hidden="true"
+                  className="mx-auto h-8 w-8 text-gold-400 transition-transform duration-300 group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                 >
                   {f.icon}
                 </svg>
-                <p className="mt-3 font-display text-base text-ivory">{f.title}</p>
-                <p className="mt-1 text-sm text-ivory/50">{f.description}</p>
+                <p className="mt-4 font-sans text-base font-semibold tracking-tight text-ivory">
+                  {f.title}
+                </p>
+                <p className="mt-1.5 text-sm leading-relaxed text-ivory/60">{f.description}</p>
               </div>
             </Reveal>
           ))}
@@ -178,20 +185,26 @@ export default function Home() {
       {/* Newsletter */}
       <section className="border-t border-navy-700/60">
         <Reveal className="mx-auto max-w-3xl px-6 py-16 text-center">
-          <p className="text-sm font-medium uppercase tracking-widest text-gold-500/80">
-            Stay Updated
+          {/* Green "live" pill: the dot blinks with an expanding ring.
+              The ring animation is skipped for reduced-motion users. */}
+          <p className="inline-flex items-center gap-2 rounded-full border border-[#22c55e]/30 bg-[#22c55e]/10 px-3 py-1.5 text-xs font-medium text-ivory/80">
+            <span aria-hidden="true" className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[#22c55e] opacity-75 motion-safe:animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#22c55e]" />
+            </span>
+            Stay updated
           </p>
-          <h2 className="mt-2 font-display text-3xl text-ivory">
+          <h2 className="mt-5 font-sans text-3xl font-bold leading-[1.1] tracking-[-0.03em] text-ivory [text-wrap:balance] sm:text-4xl">
             Get the latest books and offers
           </h2>
-          <p className="mx-auto mt-3 max-w-md text-ivory/60">
+          <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-ivory/70">
             Subscribe to our newsletter and be the first to know about new
             releases, exclusive deals, and special offers from Adyoolau.
           </p>
 
           <form
             onSubmit={handleSubscribe}
-            className="mx-auto mt-6 flex max-w-md flex-col gap-3 sm:flex-row"
+            className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row"
           >
             <input
               type="email"
@@ -199,18 +212,22 @@ export default function Home() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email address"
-              className="flex-1 rounded-full border border-navy-700 bg-navy-900 px-5 py-3 text-sm text-ivory placeholder:text-ivory/40 focus:border-gold-500"
+              aria-label="Email address"
+              className={`flex-1 rounded-full border border-navy-700 bg-navy-900 px-5 py-3 text-sm text-ivory placeholder:text-ivory/40 focus:border-gold-500 ${FOCUS_RING}`}
             />
             <button
               type="submit"
               disabled={subscribing}
-              className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink transition-all duration-200 hover:bg-gold-400 hover:shadow-md hover:shadow-gold-500/30 active:scale-95 disabled:opacity-50 disabled:hover:shadow-none"
+              className={`rounded-full bg-gold-500 px-6 py-3 text-sm font-semibold text-ink shadow-lg shadow-gold-500/20 transition hover:bg-gold-400 active:scale-[0.98] disabled:opacity-50 disabled:hover:bg-gold-500 ${FOCUS_RING}`}
             >
               {subscribing ? "Subscribing…" : "Subscribe"}
             </button>
           </form>
 
-          {subStatus && <p className="mt-3 text-sm text-gold-400">{subStatus}</p>}
+          {/* role=status announces the result to screen readers */}
+          <p role="status" className="mt-4 min-h-5 text-sm text-gold-400">
+            {subStatus}
+          </p>
         </Reveal>
       </section>
     </div>

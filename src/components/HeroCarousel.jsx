@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Link } from "react-router-dom";
+import { InfoLink } from "./InfoModal.jsx";
 import image29008 from "./images/29008.jpg";
 import image29006 from "./images/29006.jpg";
 import image29009 from "./images/29009.jpg";
@@ -37,6 +37,9 @@ const SLIDES = [
 
 const AUTO_ADVANCE_MS = 6500;
 
+const FOCUS_RING =
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400";
+
 export default function HeroCarousel() {
   const [index, setIndex] = useState(0);
   const timerRef = useRef(null);
@@ -71,16 +74,17 @@ export default function HeroCarousel() {
             }}
           />
         ))}
-        <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/85 to-ink/40 pointer-events-none" />
+        {/* Scrim is near-opaque under the text column so lettering baked into
+            the photos can't show through the headline. */}
+        <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/90 to-ink/20 pointer-events-none" />
       </div>
 
       <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-6 py-10 md:min-h-[560px] md:grid-cols-[1.2fr,1fr] md:py-20">
         <div>
-          {/* All slides share ONE grid cell (col-start-1 row-start-1), so this
-              block is always as tall as the tallest slide. Switching slides
-              only changes opacity, never the layout height, so nothing below
-              the carousel moves. Inactive slides are `invisible`, which also
-              removes their links from the tab order and screen readers. */}
+          {/* All slides share ONE grid cell, so this block is always as tall
+              as the tallest slide and nothing below the carousel moves.
+              Inactive slides are `invisible`, which also removes their links
+              from the tab order and from screen readers. */}
           <div className="grid">
             {SLIDES.map((s, i) => {
               const isActive = i === index;
@@ -90,15 +94,22 @@ export default function HeroCarousel() {
               return (
                 <div
                   key={s.title}
-                  className={`col-start-1 row-start-1 transition-[opacity,visibility] duration-500 ${
-                    isActive ? "visible opacity-100" : "invisible opacity-0"
+                  className={`col-start-1 row-start-1 transition-[opacity,visibility,transform] duration-500 motion-reduce:transition-none ${
+                    isActive
+                      ? "visible translate-y-0 opacity-100"
+                      : "invisible translate-y-2 opacity-0"
                   }`}
                 >
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-500">
+                  {/* Eyebrow: a quiet pill in sentence case, not tracked caps */}
+                  <p className="inline-flex max-w-full items-center gap-2 rounded-full border border-ivory/15 bg-ivory/5 px-3 py-1.5 text-xs font-medium text-ivory/80 backdrop-blur-sm">
+                    <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold-500" />
                     {s.eyebrow}
                   </p>
-                  <Heading className="mt-4 font-display text-4xl leading-[1.1] text-ivory sm:text-5xl md:text-6xl">
-                    {s.title} <span className="text-gold-400">{s.highlight}</span>
+
+                  {/* Headline: heavy sans, tight tracking and leading, one
+                      color, balanced line breaks */}
+                  <Heading className="mt-5 font-sans text-4xl font-bold leading-[1.05] tracking-[-0.035em] text-ivory [text-wrap:balance] sm:text-5xl md:text-6xl">
+                    {s.title} {s.highlight}
                   </Heading>
 
                   {/* Mobile-only image: sits in normal document flow between
@@ -112,22 +123,26 @@ export default function HeroCarousel() {
                     />
                   </div>
 
-                  <p className="mt-6 max-w-md text-base text-ivory/70 md:text-lg">{s.body}</p>
-                  <div className="mt-6 flex flex-wrap items-center gap-4">
-                    <Link
+                  <p className="mt-6 max-w-[34rem] text-base leading-relaxed text-ivory/75 md:text-lg">
+                    {s.body}
+                  </p>
+
+                  <div className="mt-8 flex flex-wrap items-center gap-3">
+                    <InfoLink
                       to={s.primaryCta.to}
-                      className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400"
+                      className={`rounded-full bg-gold-500 px-6 py-3 text-sm font-semibold text-ink shadow-lg shadow-gold-500/20 transition hover:bg-gold-400 active:scale-[0.98] ${FOCUS_RING}`}
                     >
                       {s.primaryCta.label}
-                    </Link>
-                    <Link
+                    </InfoLink>
+                    <InfoLink
                       to={s.secondaryCta.to}
-                      className="text-sm font-medium text-ivory/60 underline underline-offset-4 hover:text-gold-500 md:rounded-full md:border md:border-ivory/30 md:px-6 md:py-3 md:text-ivory/90 md:no-underline md:hover:border-gold-500 md:hover:text-gold-400"
+                      className={`rounded-full border border-ivory/25 px-6 py-3 text-sm font-semibold text-ivory/90 transition hover:border-gold-500 hover:text-gold-400 active:scale-[0.98] ${FOCUS_RING}`}
                     >
                       {s.secondaryCta.label}
-                    </Link>
+                    </InfoLink>
                   </div>
-                  {s.note && <p className="mt-3 text-xs text-ivory/50">{s.note}</p>}
+
+                  {s.note && <p className="mt-4 text-sm text-ivory/60">{s.note}</p>}
                 </div>
               );
             })}
@@ -138,7 +153,7 @@ export default function HeroCarousel() {
             <button
               onClick={() => goTo(index - 1)}
               aria-label="Previous slide"
-              className="rounded-full border border-ivory/30 bg-ink/50 p-2 text-ivory/70 backdrop-blur-sm hover:border-gold-500 hover:text-gold-400"
+              className={`rounded-full border border-ivory/30 bg-ink/50 p-2 text-ivory/70 backdrop-blur-sm hover:border-gold-500 hover:text-gold-400 ${FOCUS_RING}`}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -151,7 +166,8 @@ export default function HeroCarousel() {
                   key={i}
                   onClick={() => goTo(i)}
                   aria-label={`Go to slide ${i + 1}`}
-                  className={`h-2 rounded-full transition-all ${
+                  aria-current={i === index}
+                  className={`h-2 rounded-full transition-all ${FOCUS_RING} ${
                     i === index ? "w-6 bg-gold-500" : "w-2 bg-ivory/30 hover:bg-ivory/50"
                   }`}
                 />
@@ -161,7 +177,7 @@ export default function HeroCarousel() {
             <button
               onClick={() => goTo(index + 1)}
               aria-label="Next slide"
-              className="rounded-full border border-ivory/30 bg-ink/50 p-2 text-ivory/70 backdrop-blur-sm hover:border-gold-500 hover:text-gold-400"
+              className={`rounded-full border border-ivory/30 bg-ink/50 p-2 text-ivory/70 backdrop-blur-sm hover:border-gold-500 hover:text-gold-400 ${FOCUS_RING}`}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />

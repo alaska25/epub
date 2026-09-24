@@ -31,7 +31,21 @@
 html {
   scroll-behavior: smooth;
 }
+/* Modern heading defaults for every page, including ones rendered inside modals */
+@layer base {
+  h1, h2, h3, h4 {
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    text-wrap: balance;
+  }
+}
 
+/* Anything still using the old serif class now uses the site's body font.
+   Kept outside @layer so it overrides the Tailwind utility. */
+.font-display {
+  font-family: inherit;
+}
 body {
   background-color: rgb(var(--color-ink));
   transition: background-color 0.2s ease;

@@ -1,57 +1,24 @@
-import { lazy, Suspense, useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import Modal from "./Modal.jsx";
-
-// Adjust these import paths and filenames to match your project. Each page
-// must be the default export of its file. They load only when first opened.
-const About = lazy(() => import("../pages/About.jsx"));
-const Contact = lazy(() => import("../pages/Contact.jsx"));
-const RefundPolicy = lazy(() => import("../pages/RefundPolicy.jsx"));
-const Terms = lazy(() => import("../pages/Terms.jsx"));
-const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy.jsx"));
+import { InfoLink, InfoModalHost } from "./InfoModal.jsx";
 
 const LINK_GROUPS = [
   {
     heading: "Company",
     links: [
-      { label: "About", to: "/about", component: About },
-      { label: "Contact", to: "/contact", component: Contact },
+      { label: "About", to: "/about" },
+      { label: "Contact", to: "/contact" },
     ],
   },
   {
     heading: "Support",
     links: [
-      { label: "Refund Policy", to: "/refund-policy", component: RefundPolicy },
-      { label: "Terms of Service", to: "/terms", component: Terms },
-      { label: "Privacy Policy", to: "/privacy-policy", component: PrivacyPolicy },
+      { label: "Refund Policy", to: "/refund-policy" },
+      { label: "Terms of Service", to: "/terms" },
+      { label: "Privacy Policy", to: "/privacy-policy" },
     ],
   },
 ];
 
 export default function Footer() {
-  // `active` keeps the last opened item so its title and content stay
-  // visible while the modal animates out; `open` controls visibility.
-  const [active, setActive] = useState(null);
-  const [open, setOpen] = useState(false);
-  const { pathname } = useLocation();
-
-  // If something inside the modal navigates elsewhere, close it.
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
-
-  const close = () => setOpen(false);
-
-  const handleClick = (e, link) => {
-    // Let ctrl/cmd/shift/middle-click open the real page in a new tab.
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-    e.preventDefault();
-    setActive(link);
-    setOpen(true);
-  };
-
-  const ActiveContent = active?.component;
-
   return (
     <footer
       className="relative mt-24 overflow-hidden border-t border-navy-700/60 bg-navy-900 bg-cover bg-center"
@@ -83,14 +50,13 @@ export default function Footer() {
               </p>
               <nav className="mt-4 flex flex-col gap-3">
                 {group.links.map((link) => (
-                  <Link
+                  <InfoLink
                     key={link.to}
                     to={link.to}
-                    onClick={(e) => handleClick(e, link)}
                     className="text-ivory/70 transition-colors hover:text-gold-400"
                   >
                     {link.label}
-                  </Link>
+                  </InfoLink>
                 ))}
               </nav>
             </div>
@@ -105,11 +71,8 @@ export default function Footer() {
         </div>
       </div>
 
-      <Modal open={open} onClose={close} title={active?.label}>
-        <Suspense fallback={<p className="text-ivory/60">Loading…</p>}>
-          {ActiveContent && <ActiveContent />}
-        </Suspense>
-      </Modal>
+      {/* The single modal used by every InfoLink on the page */}
+      <InfoModalHost />
     </footer>
   );
 }
