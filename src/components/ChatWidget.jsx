@@ -51,6 +51,34 @@ export default function ChatWidget() {
     };
   }, [open]);
 
+  // Lock the page's own scroll while the chat is open. On mobile the panel
+  // is fixed but can be shorter than the full screen (see the backdrop note
+  // below); without this the body behind it can still scroll, which made the
+  // footer visibly shift/"float" while chatting.
+  useEffect(() => {
+    if (!open || typeof document === "undefined") return;
+
+    const { body } = document;
+    const scrollY = window.scrollY;
+    const prevPosition = body.style.position;
+    const prevTop = body.style.top;
+    const prevWidth = body.style.width;
+    const prevOverflow = body.style.overflow;
+
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+
+    return () => {
+      body.style.position = prevPosition;
+      body.style.top = prevTop;
+      body.style.width = prevWidth;
+      body.style.overflow = prevOverflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, [open]);
+
   const handleFocus = () => {
     // Give the browser a moment to react to the keyboard, then check whether
     // it actually shrank anything. If not, switch to the compact fallback.
@@ -98,76 +126,86 @@ export default function ChatWidget() {
   return (
     <>
       {open && (
-        <div
-          // Height comes from the --chat-h CSS variable on mobile (live
-          // visualViewport height, the compact fallback, or 100dvh). From the
-          // sm breakpoint up, sm:h-[28rem] takes over. Setting `height` as an
-          // inline style would override that class on desktop and push the
-          // top of the panel off-screen, so only the variable is set inline.
-          className="fixed inset-0 z-50 flex h-[var(--chat-h,100dvh)] flex-col bg-navy-900 sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[28rem] sm:w-96 sm:overflow-hidden sm:rounded-lg sm:border sm:border-navy-700 sm:shadow-2xl sm:shadow-black/50"
-          style={panelHeight ? { "--chat-h": `${panelHeight}px` } : undefined}
-        >
-          <div className="flex items-center justify-between border-b border-navy-700/60 bg-navy-800 px-4 py-3">
-            <p className="font-display text-sm text-ivory">Adyoolau Support</p>
-            <button
-              onClick={() => setOpen(false)}
-              aria-label="Close chat"
-              className="text-ivory/50 hover:text-ivory"
-            >
-              ✕
-            </button>
-          </div>
+        <>
+          {/* Full-screen backdrop, always covers the whole viewport on mobile
+              even when the panel itself is shrunk to half-height in compact
+              mode. Without this, the page behind (including the footer) was
+              visible/could shift in the gap below the panel. Hidden on
+              desktop (sm:hidden) since the panel is a small floating card
+              there and doesn't need a backdrop. */}
+          <div className="fixed inset-0 z-40 bg-navy-900 sm:hidden" aria-hidden="true" />
 
-          {/* min-h-0 lets this flex child shrink so only the message list scrolls */}
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
-            {messages.map((m, i) => (
-              <div
-                key={i}
-                className={`max-w-[85%] rounded-lg px-3 py-2 text-sm leading-relaxed ${
-                  m.role === "user"
-                    ? "ml-auto bg-gold-500 text-ink"
-                    : "bg-navy-800 text-ivory/80"
-                }`}
-              >
-                {m.content}
-              </div>
-            ))}
-            {sending && (
-              <div className="max-w-[85%] rounded-lg bg-navy-800 px-3 py-2 text-sm text-ivory/40">
-                Typing…
-              </div>
-            )}
-            {error && <p className="text-xs text-red-400">{error}</p>}
-            <div ref={messagesEndRef} />
-          </div>
-
-          <form
-            onSubmit={handleSend}
-            className="shrink-0 border-t border-navy-700/60 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+          <div
+            // Height comes from the --chat-h CSS variable on mobile (live
+            // visualViewport height, the compact fallback, or 100dvh). From the
+            // sm breakpoint up, sm:h-[28rem] takes over. Setting `height` as an
+            // inline style would override that class on desktop and push the
+            // top of the panel off-screen, so only the variable is set inline.
+            className="fixed inset-0 z-50 flex h-[var(--chat-h,100dvh)] flex-col bg-navy-900 sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[28rem] sm:w-96 sm:overflow-hidden sm:rounded-lg sm:border sm:border-navy-700 sm:shadow-2xl sm:shadow-black/50"
+            style={panelHeight ? { "--chat-h": `${panelHeight}px` } : undefined}
           >
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                placeholder="Ask a question…"
-                className="flex-1 rounded-full border border-navy-700 bg-navy-900 px-4 py-2 text-sm text-ivory placeholder:text-ivory/40 focus:border-gold-500"
-              />
+            <div className="flex items-center justify-between border-b border-navy-700/60 bg-navy-800 px-4 py-3">
+              <p className="font-display text-sm text-ivory">Adyoolau Support</p>
               <button
-                type="submit"
-                // Keeps focus in the input when tapping Send, so the keyboard
-                // stays open and the panel doesn't resize mid-tap.
-                onMouseDown={(e) => e.preventDefault()}
-                disabled={sending || !input.trim()}
-                className="rounded-full bg-gold-500 px-4 py-2 text-sm font-medium text-ink hover:bg-gold-400 disabled:opacity-50"
+                onClick={() => setOpen(false)}
+                aria-label="Close chat"
+                className="text-ivory/50 hover:text-ivory"
               >
-                Send
+                ✕
               </button>
             </div>
-          </form>
-        </div>
+
+            {/* min-h-0 lets this flex child shrink so only the message list scrolls */}
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
+              {messages.map((m, i) => (
+                <div
+                  key={i}
+                  className={`max-w-[85%] rounded-lg px-3 py-2 text-sm leading-relaxed ${
+                    m.role === "user"
+                      ? "ml-auto bg-gold-500 text-ink"
+                      : "bg-navy-800 text-ivory/80"
+                  }`}
+                >
+                  {m.content}
+                </div>
+              ))}
+              {sending && (
+                <div className="max-w-[85%] rounded-lg bg-navy-800 px-3 py-2 text-sm text-ivory/40">
+                  Typing…
+                </div>
+              )}
+              {error && <p className="text-xs text-red-400">{error}</p>}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <form
+              onSubmit={handleSend}
+              className="shrink-0 border-t border-navy-700/60 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            >
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  placeholder="Ask a question…"
+                  className="flex-1 rounded-full border border-navy-700 bg-navy-900 px-4 py-2 text-sm text-ivory placeholder:text-ivory/40 focus:border-gold-500"
+                />
+                <button
+                  type="submit"
+                  // Keeps focus in the input when tapping Send, so the keyboard
+                  // stays open and the panel doesn't resize mid-tap.
+                  onMouseDown={(e) => e.preventDefault()}
+                  disabled={sending || !input.trim()}
+                  className="rounded-full bg-gold-500 px-4 py-2 text-sm font-medium text-ink hover:bg-gold-400 disabled:opacity-50"
+                >
+                  Send
+                </button>
+              </div>
+            </form>
+          </div>
+        </>
       )}
 
       <button
