@@ -31,8 +31,14 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  // A superadmin can do everything an admin can, so isAdmin stays true for
+  // both roles — existing admin-only UI (like the Admin nav link) keeps
+  // working unchanged for superadmins too.
+  const isSuperAdmin = user?.role === "superadmin";
+  const isAdmin = user?.role === "admin" || isSuperAdmin;
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isAdmin: user?.role === "admin" }}>
+    <AuthContext.Provider value={{ user, login, register, logout, isAdmin, isSuperAdmin }}>
       {children}
     </AuthContext.Provider>
   );
