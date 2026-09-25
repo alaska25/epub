@@ -211,7 +211,13 @@ export default function ChatWidget() {
       <button
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? "Close support chat" : "Open support chat"}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gold-500 text-ink shadow-lg shadow-black/40 hover:bg-gold-400"
+        // On mobile the panel is full-screen and its header already has a
+        // close (✕) button right where this one used to overlap the input
+        // bar, so this floating button hides there while open. On desktop
+        // the panel leaves room below it (sm:bottom-24), so it stays put.
+        className={`fixed bottom-6 right-6 z-50 h-14 w-14 items-center justify-center rounded-full bg-gold-500 text-ink shadow-lg shadow-black/40 hover:bg-gold-400 ${
+          open ? "hidden sm:flex" : "flex"
+        }`}
       >
         {open ? (
           <span className="text-2xl leading-none">✕</span>
