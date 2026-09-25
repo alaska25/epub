@@ -30,15 +30,17 @@ export default function Navbar() {
           <span className="font-display text-xl tracking-wide text-ivory">Adyoolau</span>
         </Link>
 
-        <form onSubmit={handleSearch} className="hidden flex-1 md:block">
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search titles, authors, subjects..."
-            className="w-full max-w-md rounded-full border border-navy-700 bg-navy-900 px-4 py-2 text-sm text-ivory placeholder:text-ivory/40 focus:border-gold-500"
-          />
-        </form>
+        {!isAdmin && (
+          <form onSubmit={handleSearch} className="hidden flex-1 md:block">
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search titles, authors, subjects..."
+              className="w-full max-w-md rounded-full border border-navy-700 bg-navy-900 px-4 py-2 text-sm text-ivory placeholder:text-ivory/40 focus:border-gold-500"
+            />
+          </form>
+        )}
 
         {/* Desktop nav: unchanged, just hidden below md: */}
         <nav className="ml-auto hidden items-center gap-5 text-sm md:flex">
@@ -57,17 +59,23 @@ export default function Navbar() {
               </svg>
             )}
           </button>
-          <Link to="/catalog" className="text-ivory/80 hover:text-gold-400">Catalog</Link>
-          {user && <Link to="/library" className="text-ivory/80 hover:text-gold-400">My Library</Link>}
+          {!isAdmin && (
+            <Link to="/catalog" className="text-ivory/80 hover:text-gold-400">Catalog</Link>
+          )}
+          {user && !isAdmin && (
+            <Link to="/library" className="text-ivory/80 hover:text-gold-400">My Library</Link>
+          )}
           {isAdmin && <Link to="/admin" className="text-ivory/80 hover:text-gold-400">Admin</Link>}
-          <Link to="/cart" data-cart-target className="relative text-ivory/80 hover:text-gold-400">
-            Cart
-            {items.length > 0 && (
-              <span className="absolute -right-3 -top-2 rounded-full bg-gold-500 px-1.5 text-[11px] font-semibold text-ink">
-                {items.length}
-              </span>
-            )}
-          </Link>
+          {!isAdmin && (
+            <Link to="/cart" data-cart-target className="relative text-ivory/80 hover:text-gold-400">
+              Cart
+              {items.length > 0 && (
+                <span className="absolute -right-3 -top-2 rounded-full bg-gold-500 px-1.5 text-[11px] font-semibold text-ink">
+                  {items.length}
+                </span>
+              )}
+            </Link>
+          )}
           {user ? (
             <button onClick={logout} className="text-ivory/80 hover:text-gold-400">Log out</button>
           ) : (
@@ -79,16 +87,18 @@ export default function Navbar() {
 
         {/* Mobile: cart badge + hamburger toggle, visible below md: */}
         <div className="ml-auto flex items-center gap-4 md:hidden">
-          <Link to="/cart" data-cart-target className="relative text-ivory/80">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.994-4.593 2.649-6.75H5.106M7.5 14.25L5.106 5.272M7.5 14.25L5.106 5.272m0 0L4.5 2.25M6 18.75a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm9 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-            </svg>
-            {items.length > 0 && (
-              <span className="absolute -right-2 -top-2 rounded-full bg-gold-500 px-1.5 text-[10px] font-semibold text-ink">
-                {items.length}
-              </span>
-            )}
-          </Link>
+          {!isAdmin && (
+            <Link to="/cart" data-cart-target className="relative text-ivory/80">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.994-4.593 2.649-6.75H5.106M7.5 14.25L5.106 5.272M7.5 14.25L5.106 5.272m0 0L4.5 2.25M6 18.75a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm9 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+              </svg>
+              {items.length > 0 && (
+                <span className="absolute -right-2 -top-2 rounded-full bg-gold-500 px-1.5 text-[10px] font-semibold text-ink">
+                  {items.length}
+                </span>
+              )}
+            </Link>
+          )}
           <button
             onClick={() => setMenuOpen((v) => !v)}
             aria-label="Toggle menu"
@@ -109,15 +119,17 @@ export default function Navbar() {
       {/* Mobile dropdown panel */}
       {menuOpen && (
         <div className="border-t border-navy-700/60 px-6 py-4 md:hidden">
-          <form onSubmit={handleSearch} className="mb-4">
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search titles, authors, subjects..."
-              className="w-full rounded-full border border-navy-700 bg-navy-900 px-4 py-2 text-sm text-ivory placeholder:text-ivory/40 focus:border-gold-500"
-            />
-          </form>
+          {!isAdmin && (
+            <form onSubmit={handleSearch} className="mb-4">
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search titles, authors, subjects..."
+                className="w-full rounded-full border border-navy-700 bg-navy-900 px-4 py-2 text-sm text-ivory placeholder:text-ivory/40 focus:border-gold-500"
+              />
+            </form>
+          )}
           <div className="flex flex-col gap-4 text-sm">
             <button
               onClick={() => { toggleTheme(); }}
@@ -125,8 +137,12 @@ export default function Navbar() {
             >
               {theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             </button>
-            <Link to="/catalog" onClick={() => setMenuOpen(false)} className="text-ivory/80">Catalog</Link>
-            {user && <Link to="/library" onClick={() => setMenuOpen(false)} className="text-ivory/80">My Library</Link>}
+            {!isAdmin && (
+              <Link to="/catalog" onClick={() => setMenuOpen(false)} className="text-ivory/80">Catalog</Link>
+            )}
+            {user && !isAdmin && (
+              <Link to="/library" onClick={() => setMenuOpen(false)} className="text-ivory/80">My Library</Link>
+            )}
             {isAdmin && <Link to="/admin" onClick={() => setMenuOpen(false)} className="text-ivory/80">Admin</Link>}
             {user ? (
               <button onClick={() => { logout(); setMenuOpen(false); }} className="text-left text-ivory/80">
