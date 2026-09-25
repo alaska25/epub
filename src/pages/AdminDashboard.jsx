@@ -8,7 +8,7 @@ import AdminUsers from "./admin/AdminUsers.jsx";
 import AdminCustomers from "./admin/AdminCustomers.jsx";
 
 export default function AdminDashboard() {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, user } = useAuth();
 
   const tabClass = ({ isActive }) =>
     `rounded-full px-4 py-2 text-sm ${
@@ -17,9 +17,13 @@ export default function AdminDashboard() {
 
   const defaultTab = isSuperAdmin ? "dashboard" : "books";
 
+  const heading = isSuperAdmin
+    ? `${user?.name ?? "CEO"} · CEO Dashboard`
+    : "Admin";
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
-      <h1 className="font-display text-3xl text-ivory">Admin</h1>
+      <h1 className="font-display text-3xl text-ivory">{heading}</h1>
 
       <nav className="mt-6 flex flex-wrap gap-2">
         {isSuperAdmin && (
