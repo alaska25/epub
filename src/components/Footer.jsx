@@ -20,13 +20,34 @@ const LINK_GROUPS = [
 
 export default function Footer() {
   return (
-    <footer
-      className="relative mt-24 overflow-hidden border-t border-navy-700/60 bg-navy-900 bg-cover bg-center"
-      style={{ backgroundImage: "url('/images/29004.jpg')" }}
-    >
-      {/* Flat, even scrim — dark enough for text contrast everywhere,
-          but consistent so the image doesn't wash out near the top */}
-      <div className="absolute inset-0 bg-navy-900/80" />
+    <footer className="relative mt-24 overflow-hidden border-t border-navy-700/60 bg-navy-900">
+      {/* Solid brand background: a faint radial glow from the upper-left
+          gives the panel some depth without the photo's noise or the
+          washed-out contrast it caused. */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(120% 140% at 12% 0%, rgba(212,169,79,0.08), transparent 55%)",
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Faint open-book line art, tucked in the corner as a quiet brand
+          mark rather than a full-bleed image. Pure CSS/SVG, no asset to
+          load, and low-opacity enough to never compete with the text. */}
+      <svg
+        viewBox="0 0 400 400"
+        className="pointer-events-none absolute -bottom-16 -right-16 h-[28rem] w-[28rem] text-gold-500/[0.06] sm:-bottom-20 sm:-right-10"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        aria-hidden="true"
+      >
+        <path d="M40 90 C 120 60, 170 70, 200 100 L 200 300 C 170 270, 120 260, 40 290 Z" />
+        <path d="M360 90 C 280 60, 230 70, 200 100 L 200 300 C 230 270, 280 260, 360 290 Z" />
+        <path d="M200 100 L 200 300" />
+      </svg>
 
       {/* Thin gold accent line at the very top of the footer */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold-500/60 to-transparent" />
