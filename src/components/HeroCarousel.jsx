@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { InfoLink } from "./InfoModal.jsx";
-import image29319 from "./images/29319.jpg";
-import image29318 from "./images/29318.jpg";
-import image29323 from "./images/29323.jpg";
+import image29342 from "./images/29342.jpg";
+import image29340 from "./images/29340.jpg";
+import image29339 from "./images/29339.jpg";
 
 const SLIDES = [
   {
@@ -12,7 +12,7 @@ const SLIDES = [
     body: "Adyoolau brings together fiction, nonfiction, and reference titles you can buy once and read anywhere — in the browser or downloaded for offline reading.",
     primaryCta: { label: "Browse the Catalog", to: "/catalog" },
     secondaryCta: { label: "Start with a Free Title", to: "/catalog?search=free" },
-    image: image29319,
+    image: image29342,
   },
   {
     eyebrow: "No Subscriptions",
@@ -21,7 +21,7 @@ const SLIDES = [
     body: "Every book is yours after purchase — no expiring licenses, no recurring fees. Download a copy to keep, or read it in the browser whenever you like.",
     primaryCta: { label: "Browse the Catalog", to: "/catalog" },
     secondaryCta: { label: "See our Refund Policy", to: "/refund-policy" },
-    image: image29318,
+    image: image29339,
   },
   {
     eyebrow: "New Here?",
@@ -31,7 +31,7 @@ const SLIDES = [
     primaryCta: { label: "Start with a Free Title", to: "/catalog?search=free" },
     secondaryCta: { label: "About Adyoolau", to: "/about" },
     note: "No credit card required.",
-    image: image29323,
+    image: image29340,
   },
 ];
 
@@ -92,25 +92,17 @@ function Controls({ index, count, onPrev, onNext, onGo, variant }) {
   );
 }
 
-// Fills the box on every axis with a strongly blurred, oversized duplicate
-// of the photo, and lays the real photo on top at object-contain so the
-// entire image is always visible (nothing cropped off top/bottom or
-// left/right), with no visible dark bands in the letterboxed space.
+// Renders the photo in full, uncropped, contained entirely within the box.
+// No oversized/blurred duplicate layer — nothing ever renders past the
+// box's own edges. Empty letterboxed space (top/bottom on wide images,
+// sides on tall ones) shows the section's own dark background.
 function SlideImage({ src }) {
   return (
-    <>
-      <img
-        src={src}
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full scale-125 object-cover object-center blur-3xl opacity-90"
-      />
-      <img
-        src={src}
-        alt=""
-        className="absolute inset-0 h-full w-full object-contain object-center"
-      />
-    </>
+    <img
+      src={src}
+      alt=""
+      className="absolute inset-0 h-full w-full object-contain object-center bg-ink"
+    />
   );
 }
 

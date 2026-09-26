@@ -21,7 +21,7 @@ const LINK_GROUPS = [
 
 export default function Footer() {
   return (
-    <footer className="relative mt-24 overflow-hidden border-t border-navy-700/60 bg-navy-900">
+    <footer className="relative mt-16 overflow-hidden border-t border-navy-700/60 bg-navy-900">
       <div
         className="pointer-events-none absolute inset-0"
         style={{
