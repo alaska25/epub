@@ -3,6 +3,7 @@ import api from "../api/axios.js";
 import HeroCarousel from "../components/HeroCarousel.jsx";
 import BookCarousel from "../components/BookCarousel.jsx";
 import Reveal from "../components/Reveal.jsx";
+import LaunchCountdown from "../components/LaunchCountdown.jsx";
 
 const FEATURES = [
   {
@@ -89,6 +90,14 @@ export default function Home() {
     <div>
       {/* Hero — stays as-is, it's above the fold so no reveal needed */}
       <HeroCarousel />
+
+      {/* Launch countdown */}
+      <Reveal>
+        <LaunchCountdown
+          launchDate="2026-10-15T09:00:00+09:00"
+          liveUrl="https://adyoolau.vercel.app"
+        />
+      </Reveal>
 
       {/* Featured books */}
       {loading ? (
