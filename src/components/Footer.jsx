@@ -1,4 +1,5 @@
 import { InfoLink, InfoModalHost } from "./InfoModal.jsx";
+import Reveal from "./Reveal.jsx";
 
 const LINK_GROUPS = [
   {
@@ -21,9 +22,6 @@ const LINK_GROUPS = [
 export default function Footer() {
   return (
     <footer className="relative mt-24 overflow-hidden border-t border-navy-700/60 bg-navy-900">
-      {/* Solid brand background: a faint radial glow from the upper-left
-          gives the panel some depth without the photo's noise or the
-          washed-out contrast it caused. */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
@@ -33,9 +31,6 @@ export default function Footer() {
         aria-hidden="true"
       />
 
-      {/* Faint open-book line art, tucked in the corner as a quiet brand
-          mark rather than a full-bleed image. Pure CSS/SVG, no asset to
-          load, and low-opacity enough to never compete with the text. */}
       <svg
         viewBox="0 0 400 400"
         className="pointer-events-none absolute -bottom-16 -right-16 h-[28rem] w-[28rem] text-gold-500/[0.06] sm:-bottom-20 sm:-right-10"
@@ -49,11 +44,10 @@ export default function Footer() {
         <path d="M200 100 L 200 300" />
       </svg>
 
-      {/* Thin gold accent line at the very top of the footer */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold-500/60 to-transparent" />
 
       <div className="relative mx-auto max-w-6xl px-6 py-16 text-sm text-ivory/70">
-        <div className="grid grid-cols-1 gap-x-12 gap-y-10 sm:grid-cols-[1.5fr_1fr_1fr]">
+        <Reveal className="grid grid-cols-1 gap-x-12 gap-y-10 sm:grid-cols-[1.5fr_1fr_1fr]">
           {/* Brand column */}
           <div>
             <p className="font-display text-2xl text-ivory">Adyoolau</p>
@@ -82,17 +76,19 @@ export default function Footer() {
               </nav>
             </div>
           ))}
-        </div>
+        </Reveal>
 
         {/* Bottom bar */}
-        <div className="mt-12 flex flex-col items-start gap-4 border-t border-navy-700/60 pt-6 sm:flex-row sm:items-center sm:justify-between">
+        <Reveal
+          delay={150}
+          className="mt-12 flex flex-col items-start gap-4 border-t border-navy-700/60 pt-6 sm:flex-row sm:items-center sm:justify-between"
+        >
           <p className="text-ivory/50">
             &copy; {new Date().getFullYear()} Adyoolau. All rights reserved.
           </p>
-        </div>
+        </Reveal>
       </div>
 
-      {/* The single modal used by every InfoLink on the page */}
       <InfoModalHost />
     </footer>
   );

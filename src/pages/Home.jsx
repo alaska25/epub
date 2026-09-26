@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../api/axios.js";
 import HeroCarousel from "../components/HeroCarousel.jsx";
 import BookCarousel from "../components/BookCarousel.jsx";
+import Reveal from "../components/Reveal.jsx";
 
 const FEATURES = [
   {
@@ -52,58 +53,6 @@ const FEATURES = [
 
 const FOCUS_RING =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400";
-
-// Reusable scroll-reveal hook: returns a ref to attach and whether the
-// element has entered the viewport. Fires once, then disconnects.
-function useInView(options = {}) {
-  const ref = useRef(null);
-  const [inView, setInView] = useState(false);
-
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          // Wait one frame so the browser paints the initial hidden
-          // state before we flip to visible — otherwise, if the
-          // element is already near the viewport on load, the
-          // transition can fire before the first paint and just
-          // "pop in" with no visible animation.
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => setInView(true));
-          });
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.15, ...options }
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  return [ref, inView];
-}
-
-// Wrapper that applies the fade/slide-up transition based on inView state.
-// Transitions are skipped for users who prefer reduced motion.
-function Reveal({ children, className = "", delay = 0 }) {
-  const [ref, inView] = useInView();
-
-  return (
-    <div
-      ref={ref}
-      style={{ transitionDelay: inView ? `${delay}ms` : "0ms" }}
-      className={`transition-[opacity,transform] duration-700 ease-out motion-reduce:transition-none ${
-        inView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
-      } ${className}`}
-    >
-      {children}
-    </div>
-  );
-}
 
 export default function Home() {
   const [featured, setFeatured] = useState([]);
@@ -185,8 +134,6 @@ export default function Home() {
       {/* Newsletter */}
       <section className="border-t border-navy-700/60">
         <Reveal className="mx-auto max-w-3xl px-6 py-16 text-center">
-          {/* Green "live" pill: the dot blinks with an expanding ring.
-              The ring animation is skipped for reduced-motion users. */}
           <p className="inline-flex items-center gap-2 rounded-full border border-[#22c55e]/30 bg-[#22c55e]/10 px-3 py-1.5 text-xs font-medium text-ivory/80">
             <span aria-hidden="true" className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full rounded-full bg-[#22c55e] opacity-75 motion-safe:animate-ping" />
@@ -224,7 +171,6 @@ export default function Home() {
             </button>
           </form>
 
-          {/* role=status announces the result to screen readers */}
           <p role="status" className="mt-4 min-h-5 text-sm text-gold-400">
             {subStatus}
           </p>
