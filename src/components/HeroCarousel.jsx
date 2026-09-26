@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { InfoLink } from "./InfoModal.jsx";
-import image29008 from "./images/29008.jpg";
-import image29006 from "./images/29006.jpg";
-import image29009 from "./images/29009.jpg";
+import image29319 from "./images/29319.jpg";
+import image29318 from "./images/29318.jpg";
+import image29323 from "./images/29323.jpg";
 
 const SLIDES = [
   {
@@ -12,7 +12,7 @@ const SLIDES = [
     body: "Adyoolau brings together fiction, nonfiction, and reference titles you can buy once and read anywhere — in the browser or downloaded for offline reading.",
     primaryCta: { label: "Browse the Catalog", to: "/catalog" },
     secondaryCta: { label: "Start with a Free Title", to: "/catalog?search=free" },
-    image: image29009,
+    image: image29319,
   },
   {
     eyebrow: "No Subscriptions",
@@ -21,7 +21,7 @@ const SLIDES = [
     body: "Every book is yours after purchase — no expiring licenses, no recurring fees. Download a copy to keep, or read it in the browser whenever you like.",
     primaryCta: { label: "Browse the Catalog", to: "/catalog" },
     secondaryCta: { label: "See our Refund Policy", to: "/refund-policy" },
-    image: image29006,
+    image: image29318,
   },
   {
     eyebrow: "New Here?",
@@ -31,7 +31,7 @@ const SLIDES = [
     primaryCta: { label: "Start with a Free Title", to: "/catalog?search=free" },
     secondaryCta: { label: "About Adyoolau", to: "/about" },
     note: "No credit card required.",
-    image: image29008,
+    image: image29323,
   },
 ];
 
@@ -92,6 +92,28 @@ function Controls({ index, count, onPrev, onNext, onGo, variant }) {
   );
 }
 
+// Fills the box on every axis with a strongly blurred, oversized duplicate
+// of the photo, and lays the real photo on top at object-contain so the
+// entire image is always visible (nothing cropped off top/bottom or
+// left/right), with no visible dark bands in the letterboxed space.
+function SlideImage({ src }) {
+  return (
+    <>
+      <img
+        src={src}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 h-full w-full scale-125 object-cover object-center blur-3xl opacity-90"
+      />
+      <img
+        src={src}
+        alt=""
+        className="absolute inset-0 h-full w-full object-contain object-center"
+      />
+    </>
+  );
+}
+
 export default function HeroCarousel() {
   const [index, setIndex] = useState(0);
   const timerRef = useRef(null);
@@ -119,18 +141,25 @@ export default function HeroCarousel() {
   };
 
   return (
-    <section className="relative overflow-hidden border-b border-navy-700/60 bg-ink">
+    // data-theme="dark" pins this section's color tokens (bg-ink, text-ivory,
+    // border-navy-700, etc.) to their dark values regardless of the site-wide
+    // theme toggle, so the scrim over the photo stays a dark vignette instead
+    // of washing out in light mode.
+    <section
+      data-theme="dark"
+      className="relative min-h-[560px] overflow-hidden border-b border-navy-700/60 bg-ink"
+    >
       {/* Full-bleed background image: desktop/tablet only (md and up). */}
-      <div className="hidden md:block">
+      <div className="absolute inset-0 hidden md:block">
         {SLIDES.map((s, i) => (
           <div
             key={s.image}
-            className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
-            style={{
-              backgroundImage: `url(${s.image})`,
-              opacity: i === index ? 1 : 0,
-            }}
-          />
+            className={`absolute inset-0 transition-opacity duration-1000 motion-reduce:transition-none ${
+              i === index ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <SlideImage src={s.image} />
+          </div>
         ))}
         {/* Scrim is near-opaque under the text column so lettering baked into
             the photos can't show through the headline. */}
@@ -144,14 +173,14 @@ export default function HeroCarousel() {
               taller slides ends up as space at the bottom of the hero. */}
           <div className="relative mb-6 h-56 overflow-hidden rounded-2xl shadow-lg ring-1 ring-black/5 sm:h-72 md:hidden">
             {SLIDES.map((s, i) => (
-              <img
+              <div
                 key={s.image}
-                src={s.image}
-                alt=""
-                className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 motion-reduce:transition-none ${
+                className={`absolute inset-0 transition-opacity duration-700 motion-reduce:transition-none ${
                   i === index ? "opacity-100" : "opacity-0"
                 }`}
-              />
+              >
+                <SlideImage src={s.image} />
+              </div>
             ))}
             <div className="absolute inset-x-0 bottom-3 flex justify-center">
               <Controls {...controlProps} variant="overlay" />
