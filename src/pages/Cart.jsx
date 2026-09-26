@@ -3,6 +3,7 @@ import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import api from "../api/axios.js";
 import { useEffect, useRef, useState } from "react";
+import BackButton from "../components/BackButton.jsx";
 
 // PayPal's JS SDK is loaded once and reused; this guards against loading
 // it twice if the Cart page mounts more than once in a session.
@@ -113,6 +114,8 @@ export default function Cart() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
+      <BackButton fallback="/catalog" className="mb-6" />
+
       <h1 className="font-display text-3xl text-ivory">Your cart</h1>
 
       {items.length === 0 ? (

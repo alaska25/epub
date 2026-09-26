@@ -15,8 +15,6 @@ export default function SampleReader() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Sample content and book details (for price/isFree in the buy banner)
-    // are fetched separately since /sample only returns what's needed to render.
     Promise.all([api.get(`/books/${id}/sample`), api.get(`/books/${id}`)])
       .then(([sampleRes, bookRes]) => {
         setSample(sampleRes.data);
@@ -39,9 +37,12 @@ export default function SampleReader() {
     return (
       <div className="mx-auto max-w-xl px-6 py-24 text-center">
         <p className="text-ivory/70">{error}</p>
-        <Link to={`/book/${id}`} className="mt-6 inline-block text-gold-400 hover:text-gold-300">
+        <button
+          onClick={() => navigate(`/book/${id}`, { replace: true })}
+          className="mt-6 inline-block text-gold-400 hover:text-gold-300"
+        >
           Back to book details
-        </Link>
+        </button>
       </div>
     );
   }
@@ -57,9 +58,9 @@ export default function SampleReader() {
           <p className="text-xs uppercase tracking-wide text-gold-500/80">Sample</p>
           <h1 className="font-display text-2xl text-ivory">{sample.title}</h1>
         </div>
-        <Link to={`/book/${id}`} className="text-sm text-ivory/50 hover:text-ivory">
+        <button onClick={() => navigate(-1)} className="text-sm text-ivory/50 hover:text-ivory">
           ← Back to book
-        </Link>
+        </button>
       </div>
 
       <BookViewer url={sample.url} fileType={sample.fileType} downloadable={false} />

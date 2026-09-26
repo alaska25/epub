@@ -19,10 +19,9 @@ export default function BookViewer({ url, fileType, downloadable = true }) {
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
   const [containerWidth, setContainerWidth] = useState(720);
-  // Natural height/width ratio of the loaded PDF page. Unknown until the
-  // first page finishes loading, since it depends on how the source PDF
-  // was authored (a tall cover page has a very different ratio than a
-  // standard letter/A4 page).
+  // Natural height/width ratio of the loaded PDF page. Kept across page
+  // turns (only reset when the document itself changes) so the container
+  // doesn't snap to a different size and flash while the next page loads.
   const [pageAspect, setPageAspect] = useState(null);
   const [viewportHeight, setViewportHeight] = useState(
     typeof window !== "undefined" ? window.innerHeight : 900
@@ -73,12 +72,14 @@ export default function BookViewer({ url, fileType, downloadable = true }) {
     return () => window.removeEventListener("resize", updateHeight);
   }, []);
 
-  // Reset the known aspect ratio whenever the file or page changes, so a
-  // stale ratio from a previous page/document can't briefly mis-size the
-  // next one before its own onLoadSuccess fires.
+  // Reset the known aspect ratio only when the document itself changes
+  // (not on every page turn). Most PDFs keep a consistent page aspect
+  // ratio throughout, so holding onto the previous value while the next
+  // page loads keeps the container size stable instead of snapping to
+  // full width and back, which is what caused the flash on "Next".
   useEffect(() => {
     setPageAspect(null);
-  }, [url, pageNumber]);
+  }, [url]);
 
   // Fit-to-screen: render at whichever is smaller of "as wide as the
   // container allows" or "as wide as it can be while still fitting within
@@ -93,8 +94,8 @@ export default function BookViewer({ url, fileType, downloadable = true }) {
     <div>
       {downloadable && (
         <div className="mb-4 flex justify-end">
-          <a
-            href={url}
+          
+            <a href={url}
             download
             className="rounded-full border border-navy-700 px-4 py-2 text-sm text-ivory/70 hover:border-gold-500 hover:text-gold-400"
           >
@@ -114,6 +115,15 @@ export default function BookViewer({ url, fileType, downloadable = true }) {
               <Page
                 pageNumber={pageNumber}
                 width={pageWidth}
+                loading={
+                  <div
+                    style={{
+                      width: pageWidth,
+                      height: pageAspect ? pageWidth * pageAspect : undefined,
+                    }}
+                    className="bg-navy-900"
+                  />
+                }
                 onLoadSuccess={(page) => {
                   // Use pdfjs-dist's own viewport API rather than react-pdf's
                   // originalWidth/originalHeight convenience props — those
