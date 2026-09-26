@@ -58,6 +58,21 @@ const toDateInputValue = (value) => {
   return d.toISOString().slice(0, 10);
 };
 
+// Uploads a single file to its own endpoint (cover / book file / sample all
+// follow this same shape) and returns whether it succeeded, so the caller
+// can stop and report a specific, actionable error instead of a generic one.
+async function uploadFile(url, fieldName, file, setError, failureNote) {
+  try {
+    const data = new FormData();
+    data.append(fieldName, file);
+    await api.post(url, data, { headers: { "Content-Type": "multipart/form-data" } });
+    return true;
+  } catch (err) {
+    setError((err.response?.data?.message || failureNote) + " The rest of the book's details were saved.");
+    return false;
+  }
+}
+
 export default function AdminBookForm() {
   const { id } = useParams();
   const isEditing = Boolean(id);
@@ -65,8 +80,11 @@ export default function AdminBookForm() {
   const [cover, setCover] = useState(null);
   const [bookFile, setBookFile] = useState(null);
   const [sampleFile, setSampleFile] = useState(null);
+  const [currentCoverUrl, setCurrentCoverUrl] = useState(null);
+  const [currentBookFileType, setCurrentBookFileType] = useState(null);
   const [currentSampleType, setCurrentSampleType] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [downloadingFile, setDownloadingFile] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
@@ -85,11 +103,27 @@ export default function AdminBookForm() {
         pageCount: data.pageCount ?? "",
         publishedAt: toDateInputValue(data.publishedAt),
       });
+      setCurrentCoverUrl(data.coverUrl || null);
+      setCurrentBookFileType(data.fileType || null);
       setCurrentSampleType(data.sampleFileType || null);
     });
   }, [id, isEditing]);
 
   const update = (key, value) => setForm((f) => ({ ...f, [key]: value }));
+
+  const handleDownloadFile = async () => {
+    setDownloadingFile(true);
+    try {
+      const { data } = await api.get(`/books/${id}/file`);
+      // Open the signed S3 URL directly; it's already time-limited and
+      // needs no auth header of its own, so a new tab is enough.
+      window.open(data.url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not get a download link for the current file.");
+    } finally {
+      setDownloadingFile(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -98,7 +132,7 @@ export default function AdminBookForm() {
 
     try {
       if (isEditing) {
-        // Save the text fields first, then the sample if one was picked, so a
+        // Save the text fields first, then any replacement files, so a
         // failure in one step gives a specific, actionable error rather than
         // leaving the admin unsure what actually saved.
         try {
@@ -109,18 +143,43 @@ export default function AdminBookForm() {
           return;
         }
 
+        if (cover) {
+          const ok = await uploadFile(
+            `/books/${id}/cover`,
+            "cover",
+            cover,
+            setError,
+            "Could not upload the cover image."
+          );
+          if (!ok) {
+            setSaving(false);
+            return;
+          }
+        }
+
+        if (bookFile) {
+          const ok = await uploadFile(
+            `/books/${id}/file`,
+            "bookFile",
+            bookFile,
+            setError,
+            "Could not upload the book file."
+          );
+          if (!ok) {
+            setSaving(false);
+            return;
+          }
+        }
+
         if (sampleFile) {
-          try {
-            const data = new FormData();
-            data.append("sampleFile", sampleFile);
-            await api.post(`/books/${id}/sample`, data, {
-              headers: { "Content-Type": "multipart/form-data" },
-            });
-          } catch (err) {
-            setError(
-              (err.response?.data?.message || "Could not upload the sample file.") +
-                " The rest of the book's details were saved."
-            );
+          const ok = await uploadFile(
+            `/books/${id}/sample`,
+            "sampleFile",
+            sampleFile,
+            setError,
+            "Could not upload the sample file."
+          );
+          if (!ok) {
             setSaving(false);
             return;
           }
@@ -292,9 +351,41 @@ export default function AdminBookForm() {
 
       {isEditing && (
         <>
-          <p className="text-sm text-ivory/40">
-            To replace the cover or book file, delete this title and re-add it.
-          </p>
+          <div>
+            <label className="mb-1 block text-sm text-ivory/60">Cover image</label>
+            {currentCoverUrl && !cover && (
+              <img
+                src={currentCoverUrl}
+                alt="Current cover"
+                className="mb-2 h-32 w-auto rounded-md border border-navy-700 object-cover"
+              />
+            )}
+            <FileField
+              label={null}
+              hint="Choosing a new image replaces the current cover when you save."
+              accept=".jpg,.jpeg,.png,.webp"
+              file={cover}
+              onChange={setCover}
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm text-ivory/60">Book file (manuscript)</label>
+            <p className="mb-1.5 text-xs text-ivory/40">
+              {currentBookFileType
+                ? `Current file: ${currentBookFileType.toUpperCase()}. Choosing a new file replaces it when you save.`
+                : "PDF or EPUB — the full book readers get once they own it. Choosing a new file replaces the current one when you save."}
+            </p>
+            <button
+              type="button"
+              onClick={handleDownloadFile}
+              disabled={downloadingFile}
+              className="mb-2 text-sm text-gold-400 hover:text-gold-300 disabled:opacity-50"
+            >
+              {downloadingFile ? "Getting link…" : "Download current file"}
+            </button>
+            <FileField accept=".pdf,.epub" file={bookFile} onChange={setBookFile} />
+          </div>
 
           <FileField
             label="Sample file"
