@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import api from "../api/axios.js";
 import BookCard from "../components/BookCard.jsx";
 import BackButton from "../components/BackButton.jsx";
+import Reveal from "../components/Reveal.jsx";
 
 export default function Catalog() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -15,14 +16,8 @@ export default function Catalog() {
   const category = searchParams.get("category") || "";
   const page = Number(searchParams.get("page") || 1);
 
-  // The hero's "Start with a Free Title" buttons send ?search=free, which the
-  // API treats as "show free books". Show that as a chip instead of the raw
-  // word in the search box.
   const isFreeFilter = search.trim().toLowerCase() === "free";
 
-  // Local copy of the search box text, kept in sync with the URL so the box
-  // updates when the URL changes (header search, clearing the chip, back
-  // button) without losing focus while typing.
   const [query, setQuery] = useState(isFreeFilter ? "" : search);
   useEffect(() => {
     setQuery(isFreeFilter ? "" : search);
@@ -33,7 +28,7 @@ export default function Catalog() {
   }, []);
 
   useEffect(() => {
-    let ignore = false; // drop out-of-order responses when filters change fast
+    let ignore = false;
     setLoading(true);
     api
       .get("/books", { params: { search, category, page, limit: 12 } })
@@ -55,8 +50,6 @@ export default function Catalog() {
     const next = new URLSearchParams(searchParams);
     if (value) next.set(key, value);
     else next.delete(key);
-    // Changing a filter goes back to page 1. Changing the page itself must
-    // NOT clear the page param (that made every page button jump to page 1).
     if (key !== "page") next.delete("page");
     setSearchParams(next);
   };
@@ -115,8 +108,10 @@ export default function Catalog() {
       ) : (
         <>
           <div className="mt-10 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 md:grid-cols-4">
-            {books.map((book) => (
-              <BookCard key={book._id} book={book} />
+            {books.map((book, i) => (
+              <Reveal key={book._id} delay={Math.min(i * 50, 400)}>
+                <BookCard book={book} />
+              </Reveal>
             ))}
           </div>
 
