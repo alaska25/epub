@@ -26,6 +26,12 @@ export default function BookDetail() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Without this, navigating here from a scrolled-down position on the
+    // catalog or a home carousel (common on mobile) leaves this page
+    // rendered at that same scroll offset — landing near the reviews or
+    // footer instead of the top of the new book's page.
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+
     api
       .get(`/books/${id}`)
       .then(({ data }) => setBook(data))
