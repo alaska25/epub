@@ -3,12 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
+import { useAuthModal } from "../context/AuthModalContext.jsx";
 import logo from "../assets/logo.png";
 
 export default function Navbar() {
   const { user, logout, isAdmin } = useAuth();
   const { items } = useCart();
   const { theme, toggleTheme } = useTheme();
+  const { openLogin } = useAuthModal();
   const [query, setQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
@@ -79,9 +81,12 @@ export default function Navbar() {
           {user ? (
             <button onClick={logout} className="text-ivory/80 hover:text-gold-400">Log out</button>
           ) : (
-            <Link to="/login" className="rounded-full border border-gold-500 px-4 py-1.5 text-gold-400 hover:bg-gold-500 hover:text-ink">
+            <button
+              onClick={openLogin}
+              className="rounded-full border border-gold-500 px-4 py-1.5 text-gold-400 hover:bg-gold-500 hover:text-ink"
+            >
               Sign in
-            </Link>
+            </button>
           )}
         </nav>
 
@@ -149,13 +154,12 @@ export default function Navbar() {
                 Log out
               </button>
             ) : (
-              <Link
-                to="/login"
-                onClick={() => setMenuOpen(false)}
+              <button
+                onClick={() => { openLogin(); setMenuOpen(false); }}
                 className="w-fit rounded-full border border-gold-500 px-4 py-1.5 text-gold-400"
               >
                 Sign in
-              </Link>
+              </button>
             )}
           </div>
         </div>

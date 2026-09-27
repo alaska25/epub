@@ -26,6 +26,20 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
+  // Requests a reset email. Does not log the user in or touch stored auth
+  // state — the backend should respond the same way whether or not the
+  // email exists, so this never reveals which emails are registered.
+  const forgotPassword = async (email) => {
+    const { data } = await api.post("/auth/forgot-password", { email });
+    return data;
+  };
+
+  // Completes a reset using the token from the emailed link.
+  const resetPassword = async (token, password) => {
+    const { data } = await api.post("/auth/reset-password", { token, password });
+    return data;
+  };
+
   const logout = () => {
     localStorage.removeItem("adyoolau_user");
     setUser(null);
@@ -45,7 +59,17 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, login, register, logout, updateUser, isAdmin, isSuperAdmin }}
+      value={{
+        user,
+        login,
+        register,
+        forgotPassword,
+        resetPassword,
+        logout,
+        updateUser,
+        isAdmin,
+        isSuperAdmin,
+      }}
     >
       {children}
     </AuthContext.Provider>
