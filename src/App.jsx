@@ -24,7 +24,8 @@ import RefundPolicy from "./pages/RefundPolicy.jsx";
 import Terms from "./pages/Terms.jsx";
 import ChatWidget from "./components/ChatWidget.jsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
-
+import Templates from "./pages/Templates.jsx";
+import TemplateDetail from "./pages/TemplateDetail.jsx";
 
 export default function App() {
   return (
@@ -36,6 +37,8 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/book/:id" element={<BookDetail />} />
+            <Route path="/templates" element={<Templates />} />
+            <Route path="/template/:id" element={<TemplateDetail />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />

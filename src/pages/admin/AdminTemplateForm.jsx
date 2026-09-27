@@ -70,6 +70,7 @@ export default function AdminTemplateForm() {
   const [saving, setSaving] = useState(false);
   const [downloadingFile, setDownloadingFile] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -143,7 +144,9 @@ export default function AdminTemplateForm() {
         await api.post("/templates", data, { headers: { "Content-Type": "multipart/form-data" } });
       }
 
-      navigate("/admin/templates");
+      setSuccess(true);
+      setSaving(false);
+      setTimeout(() => navigate("/admin/templates"), 1200);
     } catch (err) {
       setError(err.response?.data?.message || "Could not save the template.");
       setSaving(false);
@@ -153,6 +156,15 @@ export default function AdminTemplateForm() {
   return (
     <form onSubmit={handleSubmit} className="max-w-xl space-y-4">
       <h2 className="font-display text-xl text-ivory">{isEditing ? "Edit template" : "Add a new template"}</h2>
+
+      {success && (
+        <div className="flex items-center gap-2 rounded-md border border-[#22c55e]/30 bg-[#22c55e]/10 px-4 py-3 text-sm text-[#22c55e]">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 shrink-0">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
+          {isEditing ? "Template updated successfully." : "Template uploaded successfully."}
+        </div>
+      )}
 
       <div>
         <label className="mb-1 block text-sm text-ivory/60">Title</label>
@@ -259,7 +271,7 @@ export default function AdminTemplateForm() {
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      <button type="submit" disabled={saving}
+      <button type="submit" disabled={saving || success}
         className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400 disabled:opacity-50">
         {saving ? "Saving…" : isEditing ? "Save changes" : "Add template"}
       </button>

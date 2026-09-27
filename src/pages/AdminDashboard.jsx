@@ -92,32 +92,32 @@ export default function AdminDashboard() {
 
         <nav className="mt-6 flex flex-wrap gap-1 rounded-full border border-navy-700/60 bg-navy-900/60 p-1 w-fit">
           {isSuperAdmin && (
-            <NavLink to="dashboard" className={tabClass}>
+            <NavLink to="dashboard" className={tabClass} end>
               Dashboard
             </NavLink>
           )}
           <NavLink to="books" className={tabClass} end>
             Books
           </NavLink>
-          <NavLink to="books/new" className={tabClass}>
+          <NavLink to="books/new" className={tabClass} end>
             Add book
           </NavLink>
-          <NavLink to="templates" className={tabClass}>
+          <NavLink to="templates" className={tabClass} end>
             Templates
           </NavLink>
-          <NavLink to="templates/new" className={tabClass}>
+          <NavLink to="templates/new" className={tabClass} end>
             Add template
           </NavLink>
-          <NavLink to="orders" className={tabClass}>
+          <NavLink to="orders" className={tabClass} end>
             Orders
           </NavLink>
           {isSuperAdmin && (
-            <NavLink to="admins" className={tabClass}>
+            <NavLink to="admins" className={tabClass} end>
               Admins
             </NavLink>
           )}
           {isSuperAdmin && (
-            <NavLink to="customers" className={tabClass}>
+            <NavLink to="customers" className={tabClass} end>
               Customers
             </NavLink>
           )}

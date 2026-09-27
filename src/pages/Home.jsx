@@ -53,6 +53,55 @@ const FEATURES = [
   },
 ];
 
+// Mirrors FEATURES above, but scoped to what a developer actually cares
+// about when evaluating a starter template rather than an ebook.
+const TEMPLATE_FEATURES = [
+  {
+    title: "Full Source Included",
+    description: "The complete codebase, not just a demo.",
+    icon: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"
+      />
+    ),
+  },
+  {
+    title: "Instant Download",
+    description: "Get the zip immediately after checkout.",
+    icon: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"
+      />
+    ),
+  },
+  {
+    title: "Preview Before You Buy",
+    description: "README and file structure, right on the page.",
+    icon: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+      />
+    ),
+  },
+  {
+    title: "Secure Purchase",
+    description: "Safe and reliable payment methods.",
+    icon: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+      />
+    ),
+  },
+];
+
 const FOCUS_RING =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400";
 
@@ -115,7 +164,7 @@ export default function Home() {
         </Reveal>
       )}
 
-      {/* Trust features */}
+      {/* Trust features — books */}
       <section className="border-t border-navy-700/60 bg-navy-900/40">
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-12 md:grid-cols-4">
           {FEATURES.map((f, i) => (
@@ -140,8 +189,37 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* Templates for developers */}
       <TemplateShowcase />
-      {/* Newsletter */}
+
+      {/* Trust features — templates (mirrors the books strip above, own audience) */}
+      <section className="border-t border-navy-700/60">
+        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-12 md:grid-cols-4">
+          {TEMPLATE_FEATURES.map((f, i) => (
+            <Reveal key={f.title} delay={i * 100}>
+              <div className="group h-full rounded-lg border border-navy-700/60 p-5 text-center transition-all duration-300 hover:-translate-y-1 hover:border-gold-500/50 hover:bg-navy-900/60 hover:shadow-lg hover:shadow-navy-900/50 motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  aria-hidden="true"
+                  className="mx-auto h-8 w-8 text-gold-400 transition-transform duration-300 group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                >
+                  {f.icon}
+                </svg>
+                <p className="mt-4 font-sans text-base font-semibold tracking-tight text-ivory">
+                  {f.title}
+                </p>
+                <p className="mt-1.5 text-sm leading-relaxed text-ivory/60">{f.description}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* Newsletter — kept neutral so it lands for both readers and developers */}
       <section className="border-t border-navy-700/60">
         <Reveal className="mx-auto max-w-3xl px-6 py-16 text-center">
           <p className="inline-flex items-center gap-2 rounded-full border border-[#22c55e]/30 bg-[#22c55e]/10 px-3 py-1.5 text-xs font-medium text-ivory/80">
@@ -152,11 +230,11 @@ export default function Home() {
             Stay updated
           </p>
           <h2 className="mt-5 font-sans text-3xl font-bold leading-[1.1] tracking-[-0.03em] text-ivory [text-wrap:balance] sm:text-4xl">
-            Get the latest books and offers
+            Get the latest releases and updates
           </h2>
           <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-ivory/70">
             Subscribe to our newsletter and be the first to know about new
-            releases, exclusive deals, and special offers from Adyoolau.
+            books, templates, and offers from Adyoolau.
           </p>
 
           <form
