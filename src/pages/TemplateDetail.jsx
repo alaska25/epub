@@ -94,6 +94,32 @@ export default function TemplateDetail() {
           <h1 className="mt-2 font-display text-3xl tracking-tight text-ivory">{template.title}</h1>
           {template.tagline && <p className="mt-2 text-ivory/60">{template.tagline}</p>}
 
+          <div className="mt-6 flex items-center gap-4">
+            <p className="font-display text-2xl text-ivory">
+              {template.isFree ? "Free" : `$${template.price.toFixed(2)}`}
+            </p>
+
+            {template.isFree ? (
+              <button
+                onClick={handleClaimFree}
+                disabled={claiming}
+                className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400 disabled:opacity-50"
+              >
+                {claiming ? "Adding…" : "Get for free"}
+              </button>
+            ) : (
+              <button
+                onClick={handleAddToCart}
+                disabled={inCart}
+                className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400 disabled:cursor-default disabled:bg-navy-700 disabled:text-ivory/40"
+              >
+                {inCart ? "In cart" : added ? "Added ✓" : "Add to cart"}
+              </button>
+            )}
+          </div>
+
+          {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+
           <p className="mt-6 whitespace-pre-line text-sm leading-relaxed text-ivory/70">
             {template.description}
           </p>
@@ -139,32 +165,6 @@ export default function TemplateDetail() {
               </div>
             )}
           </dl>
-
-          <div className="mt-8 flex items-center gap-4">
-            <p className="font-display text-2xl text-ivory">
-              {template.isFree ? "Free" : `$${template.price.toFixed(2)}`}
-            </p>
-
-            {template.isFree ? (
-              <button
-                onClick={handleClaimFree}
-                disabled={claiming}
-                className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400 disabled:opacity-50"
-              >
-                {claiming ? "Adding…" : "Get for free"}
-              </button>
-            ) : (
-              <button
-                onClick={handleAddToCart}
-                disabled={inCart}
-                className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400 disabled:cursor-default disabled:bg-navy-700 disabled:text-ivory/40"
-              >
-                {inCart ? "In cart" : added ? "Added ✓" : "Add to cart"}
-              </button>
-            )}
-          </div>
-
-          {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
         </div>
       </div>
 
