@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import api from "../api/axios.js";
+import { useCart } from "../context/CartContext.jsx";
+import { flyToCart } from "../utils/flyToCart.js";
 
 export default function Templates() {
-  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [templates, setTemplates] = useState([]);
   const [categories, setCategories] = useState([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [addedId, setAddedId] = useState(null);
+  const { items, addItem } = useCart();
 
   const search = searchParams.get("search") || "";
   const category = searchParams.get("category") || "";
@@ -48,21 +50,29 @@ export default function Templates() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleAddToCart = (e, template) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const imgEl = e.currentTarget.closest("a")?.querySelector("img");
+    flyToCart(imgEl);
+
+    addItem(template);
+    setAddedId(template._id);
+    setTimeout(() => setAddedId((id) => (id === template._id ? null : id)), 1500);
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
-      <Link to="/" className="text-sm text-ivory/50 hover:text-ivory">
-        {t("templatesPage.backHome")}
-      </Link>
-
-      <h1 className="mt-6 font-display text-3xl tracking-tight text-ivory">{t("templatesPage.title")}</h1>
-      <p className="mt-2 text-ivory/60">{t("templatesPage.subtitle")}</p>
+      <h1 className="font-display text-3xl tracking-tight text-ivory">Templates</h1>
+      <p className="mt-2 text-ivory/60">Production-ready starter kits for your next project.</p>
 
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <input
           type="search"
           defaultValue={search}
           onKeyDown={(e) => e.key === "Enter" && updateParam("search", e.currentTarget.value.trim())}
-          placeholder={t("templatesPage.searchPlaceholder")}
+          placeholder="Search templates..."
           className="w-full max-w-xs rounded-full border border-navy-700 bg-navy-900 px-4 py-2 text-sm text-ivory placeholder:text-ivory/40 focus:border-gold-500"
         />
         <select
@@ -70,7 +80,7 @@ export default function Templates() {
           onChange={(e) => updateParam("category", e.target.value)}
           className="rounded-full border border-navy-700 bg-navy-900 px-4 py-2 text-sm text-ivory focus:border-gold-500"
         >
-          <option value="">{t("templatesPage.allCategories")}</option>
+          <option value="">All categories</option>
           {categories.map((c) => (
             <option key={c} value={c}>{c}</option>
           ))}
@@ -80,34 +90,51 @@ export default function Templates() {
             onClick={() => setSearchParams({})}
             className="text-sm text-ivory/50 hover:text-ivory"
           >
-            {t("templatesPage.clearFilters")}
+            Clear filters
           </button>
         )}
       </div>
 
       {loading ? (
-        <p className="mt-12 text-center text-ivory/50">{t("templatesPage.loading")}</p>
+        <p className="mt-12 text-center text-ivory/50">Loading…</p>
       ) : templates.length === 0 ? (
-        <p className="mt-12 text-center text-ivory/50">{t("templatesPage.noResults")}</p>
+        <p className="mt-12 text-center text-ivory/50">No templates match your search.</p>
       ) : (
         <>
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {templates.map((t2) => (
-              <Link
-                key={t2._id}
-                to={`/template/${t2._id}`}
-                className="group overflow-hidden rounded-xl border border-navy-700/60 bg-navy-900/60 transition hover:border-gold-500/50"
-              >
-                <img src={t2.coverUrl} alt={t2.title} className="h-40 w-full object-cover" />
-                <div className="p-5">
-                  <p className="font-display text-lg text-ivory">{t2.title}</p>
-                  {t2.tagline && <p className="mt-1 text-sm text-ivory/60">{t2.tagline}</p>}
-                  <p className="mt-3 text-sm font-semibold text-gold-400">
-                    {t2.isFree ? t("templatesPage.free") : `$${t2.price.toFixed(2)}`}
-                  </p>
-                </div>
-              </Link>
-            ))}
+            {templates.map((t) => {
+              const inCart = items.some((i) => i._id === t._id);
+              const justAdded = addedId === t._id;
+
+              return (
+                <Link
+                  key={t._id}
+                  to={`/template/${t._id}`}
+                  className="group overflow-hidden rounded-xl border border-navy-700/60 bg-navy-900/60 transition hover:border-gold-500/50"
+                >
+                  <img src={t.coverUrl} alt={t.title} className="h-40 w-full object-cover" />
+                  <div className="p-5">
+                    <p className="font-display text-lg text-ivory">{t.title}</p>
+                    {t.tagline && <p className="mt-1 text-sm text-ivory/60">{t.tagline}</p>}
+
+                    <div className="mt-4 flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-gold-400">
+                        {t.isFree ? "Free" : `$${t.price.toFixed(2)}`}
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={(e) => handleAddToCart(e, t)}
+                        disabled={inCart}
+                        className="shrink-0 rounded-full border border-gold-500/40 px-3.5 py-1.5 text-xs font-medium text-gold-400 transition hover:bg-gold-500/10 disabled:cursor-default disabled:border-navy-700 disabled:text-ivory/40 disabled:hover:bg-transparent"
+                      >
+                        {inCart ? "In cart" : justAdded ? "Added ✓" : "Add to cart"}
+                      </button>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
 
           {pages > 1 && (
@@ -125,7 +152,7 @@ export default function Templates() {
               ))}
             </div>
           )}
-          <p className="mt-4 text-center text-xs text-ivory/40">{t("templatesPage.totalCount", { count: total })}</p>
+          <p className="mt-4 text-center text-xs text-ivory/40">{total} template{total !== 1 ? "s" : ""} total</p>
         </>
       )}
     </div>
