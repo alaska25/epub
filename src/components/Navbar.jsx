@@ -64,6 +64,9 @@ export default function Navbar() {
           {!isAdmin && (
             <Link to="/catalog" className="text-ivory/80 hover:text-gold-400">Catalog</Link>
           )}
+          {!isAdmin && (
+            <Link to="/templates" className="text-ivory/80 hover:text-gold-400">Templates</Link>
+          )}
           {user && !isAdmin && (
             <Link to="/library" className="text-ivory/80 hover:text-gold-400">My Library</Link>
           )}
@@ -144,6 +147,9 @@ export default function Navbar() {
             </button>
             {!isAdmin && (
               <Link to="/catalog" onClick={() => setMenuOpen(false)} className="text-ivory/80">Catalog</Link>
+            )}
+            {!isAdmin && (
+              <Link to="/templates" onClick={() => setMenuOpen(false)} className="text-ivory/80">Templates</Link>
             )}
             {user && !isAdmin && (
               <Link to="/library" onClick={() => setMenuOpen(false)} className="text-ivory/80">My Library</Link>
