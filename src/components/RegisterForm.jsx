@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useBotGuard } from "../hooks/useBotGuard.js";
 import HoneyPotField from "./HoneyPotField.jsx";
 import PasswordInput from "./PasswordInput.jsx";
+
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
 /**
  * The registration form itself, with no page chrome around it, so it can be
@@ -20,6 +23,8 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const turnstileRef = useRef(null);
   const { register } = useAuth();
   const navigate = useNavigate();
   const { honeypot, setHoneypot, isBot } = useBotGuard();
@@ -33,13 +38,21 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
       return;
     }
 
+    if (!captchaToken) {
+      setError("Please complete the captcha.");
+      return;
+    }
+
     setLoading(true);
     try {
-      await register(name, email, password);
+      await register(name, email, password, captchaToken);
       onSuccess?.();
       navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Could not create account.");
+      // Tokens are single-use — reset the widget so they can retry.
+      turnstileRef.current?.reset();
+      setCaptchaToken("");
     } finally {
       setLoading(false);
     }
@@ -82,11 +95,20 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
         autoComplete="new-password"
       />
 
+      <Turnstile
+        ref={turnstileRef}
+        siteKey={TURNSTILE_SITE_KEY}
+        onSuccess={setCaptchaToken}
+        onExpire={() => setCaptchaToken("")}
+        onError={() => setCaptchaToken("")}
+        options={{ theme: "dark" }}
+      />
+
       {error && <p className="text-sm text-red-400">{error}</p>}
 
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || !captchaToken}
         className="w-full rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400 disabled:opacity-50"
       >
         {loading ? "Creating account…" : "Create account"}

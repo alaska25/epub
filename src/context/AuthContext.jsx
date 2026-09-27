@@ -20,8 +20,8 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const register = async (name, email, password) => {
-    const { data } = await api.post("/auth/register", { name, email, password });
+  const register = async (name, email, password, captchaToken) => {
+    const { data } = await api.post("/auth/register", { name, email, password, captchaToken });
     persist(data);
     return data;
   };
