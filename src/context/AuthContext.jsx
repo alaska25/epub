@@ -20,6 +20,16 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
+  // Completes sign-in using the ID token from Google Identity Services
+  // (see components/GoogleLoginButton.jsx). The backend verifies the token,
+  // finds-or-creates the matching user, and returns the same shape as
+  // login()/register(), so this can be used identically once it resolves.
+  const googleLogin = async (credential) => {
+    const { data } = await api.post("/auth/google", { credential });
+    persist(data);
+    return data;
+  };
+
   const register = async (name, email, password, captchaToken) => {
     const { data } = await api.post("/auth/register", { name, email, password, captchaToken });
     persist(data);
@@ -62,6 +72,7 @@ export const AuthProvider = ({ children }) => {
       value={{
         user,
         login,
+        googleLogin,
         register,
         forgotPassword,
         resetPassword,

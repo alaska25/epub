@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useBotGuard } from "../hooks/useBotGuard.js";
 import HoneyPotField from "./HoneyPotField.jsx";
 import PasswordInput from "./PasswordInput.jsx";
+import GoogleLoginButton from "./GoogleLoginButton.jsx";
 
 /**
  * The sign-in form itself, with no page chrome around it, so it can be
@@ -23,6 +24,22 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToFor
   const location = useLocation();
   const { honeypot, setHoneypot, isBot } = useBotGuard();
 
+  // Shared by both the email/password flow and the Google flow, so a
+  // successful sign-in behaves identically no matter which one was used.
+  const handleAuthSuccess = (data) => {
+    onSuccess?.();
+
+    if (location.state?.from) {
+      navigate(location.state.from);
+    } else if (data.role === "superadmin") {
+      navigate("/admin/dashboard");
+    } else if (data.role === "admin") {
+      navigate("/admin/books");
+    } else {
+      navigate("/");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -36,17 +53,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToFor
     setLoading(true);
     try {
       const data = await login(email, password);
-      onSuccess?.();
-
-      if (location.state?.from) {
-        navigate(location.state.from);
-      } else if (data.role === "superadmin") {
-        navigate("/admin/dashboard");
-      } else if (data.role === "admin") {
-        navigate("/admin/books");
-      } else {
-        navigate("/");
-      }
+      handleAuthSuccess(data);
     } catch (err) {
       setError(err.response?.data?.message || "Could not sign in.");
     } finally {
@@ -55,71 +62,81 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToFor
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <HoneyPotField value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />
+    <div className="space-y-4">
+      <GoogleLoginButton onSuccess={handleAuthSuccess} onError={setError} />
 
-      <div>
-        <label className="mb-1 block text-sm text-ivory/60">Email</label>
-        <input
-          type="email"
+      <div className="flex items-center gap-3 text-xs text-ivory/40">
+        <div className="h-px flex-1 bg-navy-700" />
+        or sign in with email
+        <div className="h-px flex-1 bg-navy-700" />
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <HoneyPotField value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />
+
+        <div>
+          <label className="mb-1 block text-sm text-ivory/60">Email</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            className="w-full rounded-md border border-navy-700 bg-navy-900 px-4 py-2 text-ivory focus:border-gold-500"
+          />
+        </div>
+
+        <PasswordInput
+          label="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
-          className="w-full rounded-md border border-navy-700 bg-navy-900 px-4 py-2 text-ivory focus:border-gold-500"
+          autoComplete="current-password"
         />
-      </div>
 
-      <PasswordInput
-        label="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-        autoComplete="current-password"
-      />
+        <div className="flex justify-end">
+          {onSwitchToForgot ? (
+            <button
+              type="button"
+              onClick={onSwitchToForgot}
+              className="text-xs text-ivory/50 hover:text-gold-400"
+            >
+              Forgot password?
+            </button>
+          ) : (
+            <Link to="/forgot-password" className="text-xs text-ivory/50 hover:text-gold-400">
+              Forgot password?
+            </Link>
+          )}
+        </div>
 
-      <div className="flex justify-end">
-        {onSwitchToForgot ? (
-          <button
-            type="button"
-            onClick={onSwitchToForgot}
-            className="text-xs text-ivory/50 hover:text-gold-400"
-          >
-            Forgot password?
-          </button>
-        ) : (
-          <Link to="/forgot-password" className="text-xs text-ivory/50 hover:text-gold-400">
-            Forgot password?
-          </Link>
-        )}
-      </div>
+        {error && <p className="text-sm text-red-400">{error}</p>}
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400 disabled:opacity-50"
+        >
+          {loading ? "Signing in…" : "Sign in"}
+        </button>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400 disabled:opacity-50"
-      >
-        {loading ? "Signing in…" : "Sign in"}
-      </button>
-
-      <p className="text-sm text-ivory/50">
-        Don't have an account?{" "}
-        {onSwitchToRegister ? (
-          <button
-            type="button"
-            onClick={onSwitchToRegister}
-            className="text-gold-400 hover:text-gold-300"
-          >
-            Create one
-          </button>
-        ) : (
-          <Link to="/register" className="text-gold-400 hover:text-gold-300">
-            Create one
-          </Link>
-        )}
-      </p>
-    </form>
+        <p className="text-sm text-ivory/50">
+          Don't have an account?{" "}
+          {onSwitchToRegister ? (
+            <button
+              type="button"
+              onClick={onSwitchToRegister}
+              className="text-gold-400 hover:text-gold-300"
+            >
+              Create one
+            </button>
+          ) : (
+            <Link to="/register" className="text-gold-400 hover:text-gold-300">
+              Create one
+            </Link>
+          )}
+        </p>
+      </form>
+    </div>
   );
 }
