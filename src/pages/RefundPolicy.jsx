@@ -1,75 +1,60 @@
+import { useTranslation } from "react-i18next";
+
 export default function RefundPolicy() {
+  const { t } = useTranslation();
+
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="font-display text-4xl text-ivory">Refund policy</h1>
-      <p className="mt-2 text-sm text-ivory/40">Last updated: {new Date().getFullYear()}</p>
+      <h1 className="font-display text-4xl text-ivory">{t("refundPolicy.title")}</h1>
+      <p className="mt-2 text-sm text-ivory/40">
+        {t("refundPolicy.lastUpdated", { year: new Date().getFullYear() })}
+      </p>
 
       <div className="mt-8 space-y-6 leading-relaxed text-ivory/70">
+        <p>{t("refundPolicy.intro")}</p>
+
+        <h2 className="font-display text-2xl text-ivory pt-4">{t("refundPolicy.ebooksHeading")}</h2>
+
+        <h3 className="font-display text-lg text-ivory pt-2">{t("refundPolicy.eligibleHeading")}</h3>
+        <ul className="list-disc space-y-2 pl-5">
+          <li>{t("refundPolicy.ebooks.eligible1")}</li>
+          <li>{t("refundPolicy.ebooks.eligible2")}</li>
+          <li>{t("refundPolicy.ebooks.eligible3")}</li>
+        </ul>
+
+        <h3 className="font-display text-lg text-ivory pt-2">{t("refundPolicy.notEligibleHeading")}</h3>
+        <ul className="list-disc space-y-2 pl-5">
+          <li>{t("refundPolicy.ebooks.notEligible1")}</li>
+          <li>{t("refundPolicy.ebooks.notEligible2")}</li>
+          <li>{t("refundPolicy.ebooks.notEligible3")}</li>
+        </ul>
+
+        <h2 className="font-display text-2xl text-ivory pt-4">{t("refundPolicy.templatesHeading")}</h2>
+
+        <h3 className="font-display text-lg text-ivory pt-2">{t("refundPolicy.eligibleHeading")}</h3>
+        <ul className="list-disc space-y-2 pl-5">
+          <li>{t("refundPolicy.templates.eligible1")}</li>
+          <li>{t("refundPolicy.templates.eligible2")}</li>
+          <li>{t("refundPolicy.templates.eligible3")}</li>
+        </ul>
+
+        <h3 className="font-display text-lg text-ivory pt-2">{t("refundPolicy.notEligibleHeading")}</h3>
+        <ul className="list-disc space-y-2 pl-5">
+          <li>{t("refundPolicy.templates.notEligible1")}</li>
+          <li>{t("refundPolicy.templates.notEligible2")}</li>
+          <li>{t("refundPolicy.templates.notEligible3")}</li>
+        </ul>
+
+        <h2 className="font-display text-2xl text-ivory pt-4">{t("refundPolicy.howToRequestHeading")}</h2>
         <p>
-          Because our books and templates are digital products delivered instantly
-          upon purchase, our refund policy works a little differently than it would
-          for a physical item. Here's how it works.
-        </p>
-
-        <h2 className="font-display text-2xl text-ivory pt-4">Ebooks</h2>
-
-        <h3 className="font-display text-lg text-ivory pt-2">Eligible for a refund</h3>
-        <ul className="list-disc space-y-2 pl-5">
-          <li>The file you received is corrupted, incomplete, or won't open</li>
-          <li>You were charged more than once for the same title by mistake</li>
-          <li>
-            You purchased the wrong title and haven't opened, read, or downloaded it
-            yet, and you contact us within 48 hours of purchase
-          </li>
-        </ul>
-
-        <h3 className="font-display text-lg text-ivory pt-2">Not eligible for a refund</h3>
-        <ul className="list-disc space-y-2 pl-5">
-          <li>Simply changing your mind after reading or downloading a book</li>
-          <li>Requests made more than 48 hours after purchase</li>
-          <li>Dissatisfaction with the writing style or subject matter itself</li>
-        </ul>
-
-        <h2 className="font-display text-2xl text-ivory pt-4">Developer templates</h2>
-
-        <h3 className="font-display text-lg text-ivory pt-2">Eligible for a refund</h3>
-        <ul className="list-disc space-y-2 pl-5">
-          <li>The download is corrupted, missing files, or won't extract</li>
-          <li>You were charged more than once for the same template by mistake</li>
-          <li>
-            You purchased the wrong template and haven't downloaded the source
-            files yet, and you contact us within 48 hours of purchase
-          </li>
-        </ul>
-
-        <h3 className="font-display text-lg text-ivory pt-2">Not eligible for a refund</h3>
-        <ul className="list-disc space-y-2 pl-5">
-          <li>Any refund request made after the source code has been downloaded</li>
-          <li>Requests made more than 48 hours after purchase</li>
-          <li>
-            Dissatisfaction with the tech stack, code style, or design choices,
-            since the README and file structure are shown before purchase
-          </li>
-        </ul>
-
-        <h2 className="font-display text-2xl text-ivory pt-4">
-          How to request a refund
-        </h2>
-        <p>
-          Email{" "}
+          {t("refundPolicy.howToRequestIntro")}{" "}
           <a href="mailto:support@adyoolau.com" className="text-gold-400 hover:text-gold-300">
             support@adyoolau.com
           </a>{" "}
-          with the email address you purchased under and the title in question.
-          We'll review the request and get back to you within 2–3 business days.
-          Approved refunds are returned to your original payment method and may
-          take 5–10 business days to appear, depending on your bank or PayPal.
+          {t("refundPolicy.howToRequestBody")}
         </p>
 
-        <p className="text-sm text-ivory/40">
-          This policy doesn't affect any statutory rights you may have under the
-          consumer protection laws of your country.
-        </p>
+        <p className="text-sm text-ivory/40">{t("refundPolicy.statutoryRightsNote")}</p>
       </div>
     </div>
   );

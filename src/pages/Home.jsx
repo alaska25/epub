@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import api from "../api/axios.js";
 import HeroCarousel from "../components/HeroCarousel.jsx";
 import BookCarousel from "../components/BookCarousel.jsx";
@@ -6,10 +7,11 @@ import Reveal from "../components/Reveal.jsx";
 import LaunchCountdown from "../components/LaunchCountdown.jsx";
 import TemplateShowcase from "../components/TemplateShowcase.jsx";
 
+// Only icons + translation KEYS live here now — the actual title/description
+// text comes from the active locale file via t().
 const FEATURES = [
   {
-    title: "High-Quality Content",
-    description: "Well-researched and professionally written ebooks.",
+    key: "quality",
     icon: (
       <path
         strokeLinecap="round"
@@ -19,8 +21,7 @@ const FEATURES = [
     ),
   },
   {
-    title: "Read Anywhere",
-    description: "On your device, anytime, anywhere.",
+    key: "readAnywhere",
     icon: (
       <path
         strokeLinecap="round"
@@ -30,8 +31,7 @@ const FEATURES = [
     ),
   },
   {
-    title: "Secure Purchase",
-    description: "Safe and reliable payment methods.",
+    key: "securePurchase",
     icon: (
       <path
         strokeLinecap="round"
@@ -41,8 +41,7 @@ const FEATURES = [
     ),
   },
   {
-    title: "Instant Access",
-    description: "Get your book immediately after purchase.",
+    key: "instantAccess",
     icon: (
       <path
         strokeLinecap="round"
@@ -57,8 +56,7 @@ const FEATURES = [
 // about when evaluating a starter template rather than an ebook.
 const TEMPLATE_FEATURES = [
   {
-    title: "Full Source Included",
-    description: "The complete codebase, not just a demo.",
+    key: "fullSource",
     icon: (
       <path
         strokeLinecap="round"
@@ -68,8 +66,7 @@ const TEMPLATE_FEATURES = [
     ),
   },
   {
-    title: "Instant Download",
-    description: "Get the zip immediately after checkout.",
+    key: "instantDownload",
     icon: (
       <path
         strokeLinecap="round"
@@ -79,8 +76,7 @@ const TEMPLATE_FEATURES = [
     ),
   },
   {
-    title: "Preview Before You Buy",
-    description: "README and file structure, right on the page.",
+    key: "preview",
     icon: (
       <path
         strokeLinecap="round"
@@ -90,8 +86,7 @@ const TEMPLATE_FEATURES = [
     ),
   },
   {
-    title: "Secure Purchase",
-    description: "Safe and reliable payment methods.",
+    key: "securePurchase",
     icon: (
       <path
         strokeLinecap="round"
@@ -106,6 +101,7 @@ const FOCUS_RING =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400";
 
 export default function Home() {
+  const { t } = useTranslation();
   const [featured, setFeatured] = useState([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
@@ -130,7 +126,7 @@ export default function Home() {
       setSubStatus(data.message);
       setEmail("");
     } catch (err) {
-      setSubStatus(err.response?.data?.message || "Something went wrong. Please try again.");
+      setSubStatus(err.response?.data?.message || t("newsletter.error"));
     } finally {
       setSubscribing(false);
     }
@@ -152,11 +148,11 @@ export default function Home() {
       {/* Featured books */}
       {loading ? (
         <div className="mx-auto max-w-6xl px-6 py-16">
-          <p className="text-ivory/50">Loading books…</p>
+          <p className="text-ivory/50">{t("common.loadingBooks")}</p>
         </div>
       ) : featured.length === 0 ? (
         <div className="mx-auto max-w-6xl px-6 py-16">
-          <p className="text-ivory/50">No books yet — check back soon.</p>
+          <p className="text-ivory/50">{t("common.noBooksYet")}</p>
         </div>
       ) : (
         <Reveal>
@@ -168,7 +164,7 @@ export default function Home() {
       <section className="border-t border-navy-700/60 bg-navy-900/40">
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-12 md:grid-cols-4">
           {FEATURES.map((f, i) => (
-            <Reveal key={f.title} delay={i * 100}>
+            <Reveal key={f.key} delay={i * 100}>
               <div className="group h-full rounded-lg border border-navy-700/60 p-5 text-center transition-all duration-300 hover:-translate-y-1 hover:border-gold-500/50 hover:bg-navy-900/60 hover:shadow-lg hover:shadow-navy-900/50 motion-reduce:transition-none motion-reduce:hover:translate-y-0">
                 <svg
                   viewBox="0 0 24 24"
@@ -181,9 +177,11 @@ export default function Home() {
                   {f.icon}
                 </svg>
                 <p className="mt-4 font-sans text-base font-semibold tracking-tight text-ivory">
-                  {f.title}
+                  {t(`features.${f.key}.title`)}
                 </p>
-                <p className="mt-1.5 text-sm leading-relaxed text-ivory/60">{f.description}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-ivory/60">
+                  {t(`features.${f.key}.description`)}
+                </p>
               </div>
             </Reveal>
           ))}
@@ -197,7 +195,7 @@ export default function Home() {
       <section className="border-t border-navy-700/60">
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-12 md:grid-cols-4">
           {TEMPLATE_FEATURES.map((f, i) => (
-            <Reveal key={f.title} delay={i * 100}>
+            <Reveal key={f.key} delay={i * 100}>
               <div className="group h-full rounded-lg border border-navy-700/60 p-5 text-center transition-all duration-300 hover:-translate-y-1 hover:border-gold-500/50 hover:bg-navy-900/60 hover:shadow-lg hover:shadow-navy-900/50 motion-reduce:transition-none motion-reduce:hover:translate-y-0">
                 <svg
                   viewBox="0 0 24 24"
@@ -210,9 +208,11 @@ export default function Home() {
                   {f.icon}
                 </svg>
                 <p className="mt-4 font-sans text-base font-semibold tracking-tight text-ivory">
-                  {f.title}
+                  {t(`templateFeatures.${f.key}.title`)}
                 </p>
-                <p className="mt-1.5 text-sm leading-relaxed text-ivory/60">{f.description}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-ivory/60">
+                  {t(`templateFeatures.${f.key}.description`)}
+                </p>
               </div>
             </Reveal>
           ))}
@@ -227,14 +227,13 @@ export default function Home() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-[#22c55e] opacity-75 motion-safe:animate-ping" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[#22c55e]" />
             </span>
-            Stay updated
+            {t("newsletter.badge")}
           </p>
           <h2 className="mt-5 font-sans text-3xl font-bold leading-[1.1] tracking-[-0.03em] text-ivory [text-wrap:balance] sm:text-4xl">
-            Get the latest releases and updates
+            {t("newsletter.title")}
           </h2>
           <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-ivory/70">
-            Subscribe to our newsletter and be the first to know about new
-            books, templates, and offers from Adyoolau.
+            {t("newsletter.subtitle")}
           </p>
 
           <form
@@ -246,8 +245,8 @@ export default function Home() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email address"
-              aria-label="Email address"
+              placeholder={t("newsletter.placeholder")}
+              aria-label={t("newsletter.emailAriaLabel")}
               className={`flex-1 rounded-full border border-navy-700 bg-navy-900 px-5 py-3 text-sm text-ivory placeholder:text-ivory/40 focus:border-gold-500 ${FOCUS_RING}`}
             />
             <button
@@ -255,7 +254,7 @@ export default function Home() {
               disabled={subscribing}
               className={`rounded-full bg-gold-500 px-6 py-3 text-sm font-semibold text-ink shadow-lg shadow-gold-500/20 transition hover:bg-gold-400 active:scale-[0.98] disabled:opacity-50 disabled:hover:bg-gold-500 ${FOCUS_RING}`}
             >
-              {subscribing ? "Subscribing…" : "Subscribe"}
+              {subscribing ? t("newsletter.subscribing") : t("newsletter.subscribe")}
             </button>
           </form>
 
