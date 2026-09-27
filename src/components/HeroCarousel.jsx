@@ -133,14 +133,10 @@ export default function HeroCarousel() {
   };
 
   return (
-    // data-theme="dark" pins this section's color tokens (bg-ink, text-ivory,
-    // border-navy-700, etc.) to their dark values regardless of the site-wide
-    // theme toggle, so the scrim over the photo stays a dark vignette instead
-    // of washing out in light mode.
-    <section
-      data-theme="dark"
-      className="relative min-h-[560px] overflow-hidden border-b border-navy-700/60 bg-ink"
-    >
+    // No local data-theme override here anymore — this section now follows
+    // whatever theme is set on <html> by ThemeContext, so the light/dark
+    // toggle applies here too instead of the hero staying pinned to dark.
+    <section className="relative min-h-[560px] overflow-hidden border-b border-navy-700/60 bg-ink">
       {/* Full-bleed background image: desktop/tablet only (md and up). */}
       <div className="absolute inset-0 hidden md:block">
         {SLIDES.map((s, i) => (

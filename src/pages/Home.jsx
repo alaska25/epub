@@ -4,6 +4,7 @@ import HeroCarousel from "../components/HeroCarousel.jsx";
 import BookCarousel from "../components/BookCarousel.jsx";
 import Reveal from "../components/Reveal.jsx";
 import LaunchCountdown from "../components/LaunchCountdown.jsx";
+import TemplateShowcase from "../components/TemplateShowcase.jsx";
 
 const FEATURES = [
   {
@@ -139,7 +140,7 @@ export default function Home() {
           ))}
         </div>
       </section>
-
+      <TemplateShowcase />
       {/* Newsletter */}
       <section className="border-t border-navy-700/60">
         <Reveal className="mx-auto max-w-3xl px-6 py-16 text-center">

@@ -46,6 +46,27 @@ export default function AdminCustomers() {
     }
   };
 
+  // Promoting a customer moves them off this list entirely — they now
+  // belong on the Admins tab, not here — so we drop them from local state
+  // on success rather than re-fetching the whole list.
+  const handlePromote = async (userId, name) => {
+    if (!confirm(`Make ${name} an admin? They'll gain access to the admin dashboard.`)) return;
+
+    setError("");
+    setSavingId(userId);
+    const prevUsers = users;
+    setUsers((prev) => prev.filter((u) => u._id !== userId));
+
+    try {
+      await api.put(`/users/${userId}/role`, { role: "admin" });
+    } catch (err) {
+      setUsers(prevUsers);
+      setError(err.response?.data?.message || "Could not promote this user.");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   if (loading) return <p className="text-ivory/50">Loading customers…</p>;
 
   return (
@@ -73,6 +94,14 @@ export default function AdminCustomers() {
                 </div>
                 <p className="truncate text-xs text-ivory/50">{u.email}</p>
               </div>
+
+              <button
+                onClick={() => handlePromote(u._id, u.name)}
+                disabled={savingId === u._id}
+                className="shrink-0 rounded-full border border-gold-500/40 px-3 py-1.5 text-sm text-gold-400 transition-colors hover:bg-gold-500/10 disabled:opacity-50"
+              >
+                Promote to admin
+              </button>
 
               <button
                 onClick={() => handleStatusToggle(u._id, active)}
