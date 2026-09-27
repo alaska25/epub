@@ -13,43 +13,74 @@ export default function PrivacyPolicy() {
         <h2 className="font-display text-2xl text-ivory pt-4">Information we collect</h2>
         <ul className="list-disc space-y-2 pl-5">
           <li>Account details: your name and email address when you register</li>
-          <li>Purchase history: which books you've bought or claimed for free</li>
+          <li>
+            Purchase history: which books or developer templates you've bought or
+            claimed for free
+          </li>
           <li>
             Payment information: handled entirely by PayPal — we never see or store
             your card or bank details ourselves
           </li>
           <li>Newsletter signups: your email address, if you choose to subscribe</li>
-          <li>Basic usage data: pages visited and general site activity, used to keep the site working correctly</li>
+          <li>
+            Cookies and analytics: we use cookies and similar technologies (such as
+            analytics tools) to understand how the site is used and to keep it
+            working correctly. You can control cookies through your browser
+            settings
+          </li>
         </ul>
 
         <h2 className="font-display text-2xl text-ivory pt-4">How we use it</h2>
         <p>
           We use your information to deliver purchased books to your library,
-          respond to support requests, send you the newsletter if you've opted in,
-          and keep the platform secure and working properly. We do not sell your
-          personal information to third parties.
+          provide download access to purchased templates, respond to support
+          requests, send you the newsletter if you've opted in, and keep the
+          platform secure and working properly. We do not sell your personal
+          information to third parties.
         </p>
 
         <h2 className="font-display text-2xl text-ivory pt-4">Third parties</h2>
         <p>
           We share only what's necessary to operate: PayPal processes payments,
-          our hosting and storage providers keep the site and your files running.
-          Each of these providers has its own privacy practices governing the data
-          they handle on our behalf.
+          our hosting and storage providers keep the site and your files running,
+          and our analytics provider helps us understand site usage. Each of these
+          providers has its own privacy practices governing the data they handle
+          on our behalf.
+        </p>
+
+        <h2 className="font-display text-2xl text-ivory pt-4">Data retention</h2>
+        <p>
+          We keep your account and purchase data for as long as your account is
+          active, so you retain access to your library and past downloads. If you
+          request deletion, we'll remove your personal data within a reasonable
+          period, except where we're required to retain certain records (for
+          example, transaction records) for legal or accounting purposes.
         </p>
 
         <h2 className="font-display text-2xl text-ivory pt-4">Your choices</h2>
         <ul className="list-disc space-y-2 pl-5">
           <li>You can unsubscribe from the newsletter at any time</li>
           <li>You can request a copy of the personal data we hold about you</li>
+          <li>You can request that inaccurate data be corrected</li>
           <li>You can request that your account and associated data be deleted</li>
+          <li>Where applicable under laws like the GDPR, you can request that your data be provided in a portable format</li>
         </ul>
         <p>
           To exercise any of these, email{" "}
           <a href="mailto:support@adyoolau.com" className="text-gold-400 hover:text-gold-300">
             support@adyoolau.com
           </a>
-          .
+          . If you're in the European Economic Area or UK and believe we haven't
+          resolved your request appropriately, you also have the right to lodge a
+          complaint with your local data protection authority.
+        </p>
+
+        <h2 className="font-display text-2xl text-ivory pt-4">Children's privacy</h2>
+        <p>
+          Adyoolau is not directed at children, and we do not knowingly collect
+          personal information from children under 13 (or the equivalent minimum
+          age in your jurisdiction). If you believe a child has provided us with
+          personal information, please contact us so we can remove it.
         </p>
 
         <h2 className="font-display text-2xl text-ivory pt-4">Changes to this policy</h2>

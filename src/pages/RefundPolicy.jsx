@@ -6,14 +6,14 @@ export default function RefundPolicy() {
 
       <div className="mt-8 space-y-6 leading-relaxed text-ivory/70">
         <p>
-          Because our books are digital products delivered instantly upon purchase,
-          our refund policy works a little differently than it would for a physical
-          item. Here's how it works.
+          Because our books and templates are digital products delivered instantly
+          upon purchase, our refund policy works a little differently than it would
+          for a physical item. Here's how it works.
         </p>
 
-        <h2 className="font-display text-2xl text-ivory pt-4">
-          Eligible for a refund
-        </h2>
+        <h2 className="font-display text-2xl text-ivory pt-4">Ebooks</h2>
+
+        <h3 className="font-display text-lg text-ivory pt-2">Eligible for a refund</h3>
         <ul className="list-disc space-y-2 pl-5">
           <li>The file you received is corrupted, incomplete, or won't open</li>
           <li>You were charged more than once for the same title by mistake</li>
@@ -23,13 +23,33 @@ export default function RefundPolicy() {
           </li>
         </ul>
 
-        <h2 className="font-display text-2xl text-ivory pt-4">
-          Not eligible for a refund
-        </h2>
+        <h3 className="font-display text-lg text-ivory pt-2">Not eligible for a refund</h3>
         <ul className="list-disc space-y-2 pl-5">
           <li>Simply changing your mind after reading or downloading a book</li>
-          <li>Requests made more than 14 days after purchase</li>
+          <li>Requests made more than 48 hours after purchase</li>
           <li>Dissatisfaction with the writing style or subject matter itself</li>
+        </ul>
+
+        <h2 className="font-display text-2xl text-ivory pt-4">Developer templates</h2>
+
+        <h3 className="font-display text-lg text-ivory pt-2">Eligible for a refund</h3>
+        <ul className="list-disc space-y-2 pl-5">
+          <li>The download is corrupted, missing files, or won't extract</li>
+          <li>You were charged more than once for the same template by mistake</li>
+          <li>
+            You purchased the wrong template and haven't downloaded the source
+            files yet, and you contact us within 48 hours of purchase
+          </li>
+        </ul>
+
+        <h3 className="font-display text-lg text-ivory pt-2">Not eligible for a refund</h3>
+        <ul className="list-disc space-y-2 pl-5">
+          <li>Any refund request made after the source code has been downloaded</li>
+          <li>Requests made more than 48 hours after purchase</li>
+          <li>
+            Dissatisfaction with the tech stack, code style, or design choices,
+            since the README and file structure are shown before purchase
+          </li>
         </ul>
 
         <h2 className="font-display text-2xl text-ivory pt-4">
