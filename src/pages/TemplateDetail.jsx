@@ -22,6 +22,12 @@ export default function TemplateDetail() {
   const [added, setAdded] = useState(false);
 
   useEffect(() => {
+    // Without this, navigating here from a scrolled-down position on the
+    // templates listing (common on mobile, where cards run long) leaves
+    // this page rendered at that same scroll offset — landing near the
+    // footer instead of the top of the new page.
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+
     setLoading(true);
     setNotFound(false);
     api

@@ -3,13 +3,17 @@ import { Link } from "react-router-dom";
 export default function Contact() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="font-display text-4xl text-ivory">Contact us</h1>
+      <Link to="/" className="text-sm text-ivory/50 hover:text-ivory">
+        ← Back home
+      </Link>
+
+      <h1 className="mt-6 font-display text-4xl text-ivory">Contact us</h1>
 
       <div className="mt-8 space-y-6 leading-relaxed text-ivory/70">
         <p>
           Have a question about an order, a technical issue with the site, or
-          feedback about a book? We read every message and try to reply within
-          1–2 business days.
+          feedback about a book or template? We read every message and try to
+          reply within 1–2 business days.
         </p>
 
         <div className="rounded-lg border border-navy-700/60 bg-navy-900 p-6">

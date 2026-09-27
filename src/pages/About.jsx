@@ -3,20 +3,30 @@ import { Link } from "react-router-dom";
 export default function About() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="font-display text-4xl text-ivory">About Adyoolau</h1>
+      <Link to="/" className="text-sm text-ivory/50 hover:text-ivory">
+        ← Back home
+      </Link>
+
+      <h1 className="mt-6 font-display text-4xl text-ivory">About Adyoolau</h1>
 
       <div className="mt-8 space-y-6 leading-relaxed text-ivory/70">
         <p>
-          Adyoolau is a small, independent ebook shelf built for readers who want a
-          straightforward way to buy, download, and read books without noise or
-          clutter. No subscriptions, no algorithmic feeds — just titles worth your
-          time, priced fairly, and yours to keep once you buy them.
+          Adyoolau is a small, independent shelf built for readers and developers
+          who want a straightforward way to buy things worth their time, without
+          noise or clutter. No subscriptions, no algorithmic feeds — just books and
+          starter templates, priced fairly, and yours to keep once you buy them.
         </p>
 
         <p>
           Every book you read here can be enjoyed right in your browser, or
           downloaded as a PDF or EPUB to keep on your own devices. We believe once
           you've bought a book, it's yours — no DRM lock-in, no disappearing titles.
+        </p>
+
+        <p>
+          Alongside books, we also offer developer templates: full source code you
+          can download instantly and build on, with the README and file structure
+          shown up front so you know exactly what you're getting before you buy.
         </p>
 
         <h2 className="font-display text-2xl text-ivory pt-4">What we're about</h2>
