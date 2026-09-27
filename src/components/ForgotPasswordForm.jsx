@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useBotGuard } from "../hooks/useBotGuard.js";
-import HoneypotField from "./HoneypotField.jsx";
+import HoneyPotField from "./HoneyPotField.jsx";
 
 /**
  * Requests a reset email. No page chrome, so it can be dropped into a full
@@ -67,7 +67,7 @@ export default function ForgotPasswordForm({ onBackToLogin }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <HoneypotField value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />
+      <HoneyPotField value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />
 
       <p className="text-sm text-ivory/60">
         Enter the email on your account and we'll send you a link to reset your password.

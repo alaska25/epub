@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useBotGuard } from "../hooks/useBotGuard.js";
-import HoneypotField from "./HoneypotField.jsx";
+import HoneyPotField from "./HoneyPotField.jsx";
 import PasswordInput from "./PasswordInput.jsx";
 
 /**
@@ -56,7 +56,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToFor
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <HoneypotField value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />
+      <HoneyPotField value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />
 
       <div>
         <label className="mb-1 block text-sm text-ivory/60">Email</label>
