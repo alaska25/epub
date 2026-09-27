@@ -29,11 +29,14 @@ export default function AdminCustomers() {
     };
   }, []);
 
-  const handleStatusToggle = async (userId, currentlyActive) => {
+  const handleStatusToggle = async (userId, currentlyActive, name) => {
+    const nextActive = !currentlyActive;
+    const verb = nextActive ? "Reactivate" : "Deactivate";
+    if (!confirm(`${verb} ${name}'s account?`)) return;
+
     setError("");
     setSavingId(userId);
     const prevUsers = users;
-    const nextActive = !currentlyActive;
     setUsers((prev) => prev.map((u) => (u._id === userId ? { ...u, isActive: nextActive } : u)));
 
     try {
@@ -41,27 +44,6 @@ export default function AdminCustomers() {
     } catch (err) {
       setUsers(prevUsers);
       setError(err.response?.data?.message || "Could not update status.");
-    } finally {
-      setSavingId(null);
-    }
-  };
-
-  // Promoting a customer moves them off this list entirely — they now
-  // belong on the Admins tab, not here — so we drop them from local state
-  // on success rather than re-fetching the whole list.
-  const handlePromote = async (userId, name) => {
-    if (!confirm(`Make ${name} an admin? They'll gain access to the admin dashboard.`)) return;
-
-    setError("");
-    setSavingId(userId);
-    const prevUsers = users;
-    setUsers((prev) => prev.filter((u) => u._id !== userId));
-
-    try {
-      await api.put(`/users/${userId}/role`, { role: "admin" });
-    } catch (err) {
-      setUsers(prevUsers);
-      setError(err.response?.data?.message || "Could not promote this user.");
     } finally {
       setSavingId(null);
     }
@@ -96,15 +78,7 @@ export default function AdminCustomers() {
               </div>
 
               <button
-                onClick={() => handlePromote(u._id, u.name)}
-                disabled={savingId === u._id}
-                className="shrink-0 rounded-full border border-gold-500/40 px-3 py-1.5 text-sm text-gold-400 transition-colors hover:bg-gold-500/10 disabled:opacity-50"
-              >
-                Promote to admin
-              </button>
-
-              <button
-                onClick={() => handleStatusToggle(u._id, active)}
+                onClick={() => handleStatusToggle(u._id, active, u.name)}
                 disabled={savingId === u._id}
                 className={`shrink-0 rounded-full border px-3 py-1.5 text-sm transition-colors disabled:opacity-50 ${
                   active
