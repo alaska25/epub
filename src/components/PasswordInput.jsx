@@ -7,8 +7,14 @@ export default function PasswordInput({
   required,
   minLength,
   autoComplete,
+  helperText,
+  status, // "match" | "mismatch" | undefined — overrides helperText when set
 }) {
   const [visible, setVisible] = useState(false);
+
+  const statusText = status === "match" ? "Passwords match" : status === "mismatch" ? "Passwords don't match" : null;
+  const statusColor =
+    status === "match" ? "text-green-400" : status === "mismatch" ? "text-red-400" : "text-ivory/40";
 
   return (
     <div>
@@ -50,6 +56,11 @@ export default function PasswordInput({
           )}
         </button>
       </div>
+      {(statusText || helperText) && (
+        <p className={`mt-1 text-xs ${statusText ? statusColor : "text-ivory/40"}`}>
+          {statusText || helperText}
+        </p>
+      )}
     </div>
   );
 }

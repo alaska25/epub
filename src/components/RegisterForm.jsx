@@ -21,6 +21,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
@@ -35,6 +36,11 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
 
     if (isBot()) {
       setError("Could not create account. Please try again.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
       return;
     }
 
@@ -70,7 +76,8 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           autoComplete="name"
-          className="w-full rounded-md border border-navy-700 bg-navy-900 px-4 py-2 text-ivory focus:border-gold-500"
+          placeholder="Juan Dela Cruz"
+          className="w-full rounded-md border border-navy-700 bg-navy-900 px-4 py-2 text-ivory placeholder:text-ivory/30 focus:border-gold-500"
         />
       </div>
 
@@ -82,7 +89,8 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
-          className="w-full rounded-md border border-navy-700 bg-navy-900 px-4 py-2 text-ivory focus:border-gold-500"
+          placeholder="you@example.com"
+          className="w-full rounded-md border border-navy-700 bg-navy-900 px-4 py-2 text-ivory placeholder:text-ivory/30 focus:border-gold-500"
         />
       </div>
 
@@ -93,6 +101,17 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
         required
         minLength={6}
         autoComplete="new-password"
+        helperText="At least 6 characters"
+      />
+
+      <PasswordInput
+        label="Confirm password"
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+        required
+        minLength={6}
+        autoComplete="new-password"
+        status={confirmPassword ? (confirmPassword === password ? "match" : "mismatch") : undefined}
       />
 
       <Turnstile
