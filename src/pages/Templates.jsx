@@ -48,7 +48,11 @@ export default function Templates() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
-      <h1 className="font-display text-3xl tracking-tight text-ivory">Templates</h1>
+      <Link to="/" className="text-sm text-ivory/50 hover:text-ivory">
+        ← Back home
+      </Link>
+
+      <h1 className="mt-6 font-display text-3xl tracking-tight text-ivory">Templates</h1>
       <p className="mt-2 text-ivory/60">Production-ready starter kits for your next project.</p>
 
       <div className="mt-8 flex flex-wrap items-center gap-3">
