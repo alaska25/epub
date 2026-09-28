@@ -1,13 +1,10 @@
-import { useRef } from "react";
+import { memo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import { flyToCart } from "../utils/flyToCart.js";
 import StarRating from "./StarRating.jsx";
 
-// Must match the default `duration` in flyToCart.js (750ms).
-const FLIGHT_MS = 750;
-
-export default function BookCard({ book, showAddToCart = false, compact = false }) {
+function BookCard({ book, showAddToCart = false, compact = false }) {
   const { items, addItem } = useCart();
   const navigate = useNavigate();
   const inCart = items.some((b) => b._id === book._id);
@@ -24,14 +21,12 @@ export default function BookCard({ book, showAddToCart = false, compact = false 
     if (inCart || pendingRef.current) return;
 
     pendingRef.current = true;
-    flyToCart(imgRef.current);
-
-    // Add when the cover lands, so the badge count changes on arrival
-    // instead of on click.
-    setTimeout(() => {
+    // Add when the cover lands (or immediately if the animation is skipped),
+    // so the badge count changes on arrival instead of on click.
+    flyToCart(imgRef.current).finally(() => {
       addItem(book);
       pendingRef.current = false;
-    }, FLIGHT_MS);
+    });
   };
 
   return (
@@ -41,11 +36,15 @@ export default function BookCard({ book, showAddToCart = false, compact = false 
           ref={imgRef}
           src={book.coverUrl}
           alt={`Cover of ${book.title}`}
+          loading="lazy"
+          decoding="async"
+          width="400"
+          height="600"
           className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
         />
         {book.fileType && (
           <span
-            className={`absolute right-1.5 top-1.5 rounded-full bg-ink/80 font-semibold uppercase tracking-wide text-ivory/90 backdrop-blur-sm ${
+            className={`absolute right-1.5 top-1.5 rounded-full bg-ink/90 font-semibold uppercase tracking-wide text-ivory/90 ${
               compact ? "px-1.5 py-0.5 text-[8px]" : "px-2 py-0.5 text-[10px]"
             }`}
           >
@@ -88,6 +87,7 @@ export default function BookCard({ book, showAddToCart = false, compact = false 
       {showAddToCart && (
         <button
           onClick={handleAddToCart}
+          disabled={inCart && !book.isFree}
           aria-label={book.isFree ? "Get free" : inCart ? "In cart" : "Add to Cart"}
           className={
             compact
@@ -115,3 +115,5 @@ export default function BookCard({ book, showAddToCart = false, compact = false 
     </Link>
   );
 }
+
+export default memo(BookCard);

@@ -6,8 +6,9 @@ import BookCarousel from "../components/BookCarousel.jsx";
 import Reveal from "../components/Reveal.jsx";
 import LaunchCountdown from "../components/LaunchCountdown.jsx";
 import TemplateShowcase from "../components/TemplateShowcase.jsx";
+import NewsletterForm from "../components/NewsletterForm.jsx";
 
-// Only icons + translation KEYS live here now — the actual title/description
+// Only icons + translation KEYS live here — the actual title/description
 // text comes from the active locale file via t().
 const FEATURES = [
   {
@@ -52,8 +53,8 @@ const FEATURES = [
   },
 ];
 
-// Mirrors FEATURES above, but scoped to what a developer actually cares
-// about when evaluating a starter template rather than an ebook.
+// Mirrors FEATURES above, scoped to what a developer cares about when
+// evaluating a starter template rather than an ebook.
 const TEMPLATE_FEATURES = [
   {
     key: "fullSource",
@@ -97,44 +98,41 @@ const TEMPLATE_FEATURES = [
   },
 ];
 
-const FOCUS_RING =
-  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400";
+function FeatureCard({ icon, title, description }) {
+  return (
+    <div className="group h-full rounded-lg border border-navy-700/60 p-5 text-center transition-all duration-300 hover:-translate-y-1 hover:border-gold-500/50 hover:bg-navy-900/60 hover:shadow-lg hover:shadow-navy-900/50 motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        aria-hidden="true"
+        className="mx-auto h-8 w-8 text-gold-400 transition-transform duration-300 group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+      >
+        {icon}
+      </svg>
+      <p className="mt-4 font-sans text-base font-semibold tracking-tight text-ivory">{title}</p>
+      <p className="mt-1.5 text-sm leading-relaxed text-ivory/60">{description}</p>
+    </div>
+  );
+}
 
 export default function Home() {
   const { t } = useTranslation();
   const [featured, setFeatured] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [email, setEmail] = useState("");
-  const [subStatus, setSubStatus] = useState("");
-  const [subscribing, setSubscribing] = useState(false);
 
   useEffect(() => {
     api
       .get("/books", { params: { limit: 12 } })
       .then(({ data }) => setFeatured(data.books))
-      .catch(() => {})
+      .catch((err) => console.error("Failed to load books:", err))
       .finally(() => setLoading(false));
   }, []);
 
-  const handleSubscribe = async (e) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-    setSubscribing(true);
-    setSubStatus("");
-    try {
-      const { data } = await api.post("/newsletter/subscribe", { email: email.trim() });
-      setSubStatus(data.message);
-      setEmail("");
-    } catch (err) {
-      setSubStatus(err.response?.data?.message || t("newsletter.error"));
-    } finally {
-      setSubscribing(false);
-    }
-  };
-
   return (
     <div>
-      {/* Hero — stays as-is, it's above the fold so no reveal needed */}
+      {/* Hero — above the fold so no reveal needed */}
       <HeroCarousel />
 
       {/* Launch countdown */}
@@ -147,7 +145,9 @@ export default function Home() {
 
       {/* Featured books */}
       {loading ? (
-        <div className="mx-auto max-w-6xl px-6 py-16">
+        // Reserve roughly the carousel's height so the page doesn't jump
+        // down when the books arrive.
+        <div className="mx-auto max-w-6xl px-6 py-16" style={{ minHeight: 480 }}>
           <p className="text-ivory/50">{t("common.loadingBooks")}</p>
         </div>
       ) : featured.length === 0 ? (
@@ -165,24 +165,11 @@ export default function Home() {
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-12 md:grid-cols-4">
           {FEATURES.map((f, i) => (
             <Reveal key={f.key} delay={i * 100}>
-              <div className="group h-full rounded-lg border border-navy-700/60 p-5 text-center transition-all duration-300 hover:-translate-y-1 hover:border-gold-500/50 hover:bg-navy-900/60 hover:shadow-lg hover:shadow-navy-900/50 motion-reduce:transition-none motion-reduce:hover:translate-y-0">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  aria-hidden="true"
-                  className="mx-auto h-8 w-8 text-gold-400 transition-transform duration-300 group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-                >
-                  {f.icon}
-                </svg>
-                <p className="mt-4 font-sans text-base font-semibold tracking-tight text-ivory">
-                  {t(`features.${f.key}.title`)}
-                </p>
-                <p className="mt-1.5 text-sm leading-relaxed text-ivory/60">
-                  {t(`features.${f.key}.description`)}
-                </p>
-              </div>
+              <FeatureCard
+                icon={f.icon}
+                title={t(`features.${f.key}.title`)}
+                description={t(`features.${f.key}.description`)}
+              />
             </Reveal>
           ))}
         </div>
@@ -191,29 +178,16 @@ export default function Home() {
       {/* Templates for developers */}
       <TemplateShowcase />
 
-      {/* Trust features — templates (mirrors the books strip above, own audience) */}
+      {/* Trust features — templates */}
       <section className="border-t border-navy-700/60">
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-12 md:grid-cols-4">
           {TEMPLATE_FEATURES.map((f, i) => (
             <Reveal key={f.key} delay={i * 100}>
-              <div className="group h-full rounded-lg border border-navy-700/60 p-5 text-center transition-all duration-300 hover:-translate-y-1 hover:border-gold-500/50 hover:bg-navy-900/60 hover:shadow-lg hover:shadow-navy-900/50 motion-reduce:transition-none motion-reduce:hover:translate-y-0">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  aria-hidden="true"
-                  className="mx-auto h-8 w-8 text-gold-400 transition-transform duration-300 group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-                >
-                  {f.icon}
-                </svg>
-                <p className="mt-4 font-sans text-base font-semibold tracking-tight text-ivory">
-                  {t(`templateFeatures.${f.key}.title`)}
-                </p>
-                <p className="mt-1.5 text-sm leading-relaxed text-ivory/60">
-                  {t(`templateFeatures.${f.key}.description`)}
-                </p>
-              </div>
+              <FeatureCard
+                icon={f.icon}
+                title={t(`templateFeatures.${f.key}.title`)}
+                description={t(`templateFeatures.${f.key}.description`)}
+              />
             </Reveal>
           ))}
         </div>
@@ -236,31 +210,7 @@ export default function Home() {
             {t("newsletter.subtitle")}
           </p>
 
-          <form
-            onSubmit={handleSubscribe}
-            className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row"
-          >
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t("newsletter.placeholder")}
-              aria-label={t("newsletter.emailAriaLabel")}
-              className={`flex-1 rounded-full border border-navy-700 bg-navy-900 px-5 py-3 text-sm text-ivory placeholder:text-ivory/40 focus:border-gold-500 ${FOCUS_RING}`}
-            />
-            <button
-              type="submit"
-              disabled={subscribing}
-              className={`rounded-full bg-gold-500 px-6 py-3 text-sm font-semibold text-ink shadow-lg shadow-gold-500/20 transition hover:bg-gold-400 active:scale-[0.98] disabled:opacity-50 disabled:hover:bg-gold-500 ${FOCUS_RING}`}
-            >
-              {subscribing ? t("newsletter.subscribing") : t("newsletter.subscribe")}
-            </button>
-          </form>
-
-          <p role="status" className="mt-4 min-h-5 text-sm text-gold-400">
-            {subStatus}
-          </p>
+          <NewsletterForm />
         </Reveal>
       </section>
     </div>

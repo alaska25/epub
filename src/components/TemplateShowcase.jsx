@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import api from "../api/axios.js";
@@ -12,16 +12,22 @@ export default function TemplateShowcase() {
   const [loading, setLoading] = useState(true);
   const [addedId, setAddedId] = useState(null);
   const { items, addItem } = useCart();
+  const addedTimerRef = useRef(null);
 
   useEffect(() => {
     api
       .get("/templates", { params: { limit: 3 } })
       .then(({ data }) => setTemplates(data.templates))
-      .catch(() => {})
+      .catch((err) => console.error("Failed to load templates:", err))
       .finally(() => setLoading(false));
+
+    return () => clearTimeout(addedTimerRef.current);
   }, []);
 
-  if (loading || templates.length === 0) return null;
+  // Reserve space while loading so the sections below don't jump down
+  // when the templates arrive.
+  if (loading) return <section className="h-[520px]" aria-hidden="true" />;
+  if (templates.length === 0) return null;
 
   const handleAddToCart = (e, template) => {
     e.preventDefault();
@@ -32,7 +38,11 @@ export default function TemplateShowcase() {
 
     addItem(template);
     setAddedId(template._id);
-    setTimeout(() => setAddedId((id) => (id === template._id ? null : id)), 1500);
+    clearTimeout(addedTimerRef.current);
+    addedTimerRef.current = setTimeout(
+      () => setAddedId((id) => (id === template._id ? null : id)),
+      1500
+    );
   };
 
   return (
@@ -61,7 +71,15 @@ export default function TemplateShowcase() {
                 to={`/template/${template._id}`}
                 className="group overflow-hidden rounded-xl border border-navy-700/60 bg-navy-900/60 transition hover:border-gold-500/50"
               >
-                <img src={template.coverUrl} alt={template.title} className="h-40 w-full object-cover" />
+                <img
+                  src={template.coverUrl}
+                  alt={template.title}
+                  loading="lazy"
+                  decoding="async"
+                  width="600"
+                  height="160"
+                  className="h-40 w-full object-cover"
+                />
                 <div className="p-5">
                   <p className="font-display text-lg text-ivory">{template.title}</p>
                   {template.tagline && <p className="mt-1 text-sm text-ivory/60">{template.tagline}</p>}
