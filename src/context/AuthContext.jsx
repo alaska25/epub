@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import api from "../api/axios.js";
+import { pushToast } from "../utils/toastStore.js";
 
 const AuthContext = createContext(null);
 
@@ -27,10 +28,13 @@ export const AuthProvider = ({ children }) => {
   // (see components/GoogleLoginButton.jsx). The backend verifies the token,
   // finds-or-creates the matching user, and returns the same shape as
   // login()/register(), so this can be used identically once it resolves.
+  // Marked silent so the axios interceptor's generic "Created successfully"
+  // toast doesn't fire alongside the specific one pushed below.
   const googleLogin = useCallback(
     async (credential) => {
-      const { data } = await api.post("/auth/google", { credential });
+      const { data } = await api.post("/auth/google", { credential }, { silent: true });
       persist(data);
+      pushToast({ type: "success", message: "Logged in successfully" });
       return data;
     },
     [persist]
@@ -59,9 +63,12 @@ export const AuthProvider = ({ children }) => {
     return data;
   }, []);
 
+  // Logout is purely client-side (no API call), so it can't be caught by
+  // the axios response interceptor — the toast is pushed here directly.
   const logout = useCallback(() => {
     localStorage.removeItem("adyoolau_user");
     setUser(null);
+    pushToast({ type: "success", message: "Logged out successfully" });
   }, []);
 
   // Merges partial fields (e.g. a new photoUrl after an avatar upload) into

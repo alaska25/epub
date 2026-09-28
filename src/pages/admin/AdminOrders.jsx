@@ -22,6 +22,7 @@ export default function AdminOrders() {
           <tr className="border-b border-navy-700/60 text-ivory/50">
             <th className="py-2 pr-4">Customer</th>
             <th className="py-2 pr-4">Books</th>
+            <th className="py-2 pr-4">Templates</th>
             <th className="py-2 pr-4">Total</th>
             <th className="py-2 pr-4">Status</th>
             <th className="py-2 pr-4">Date</th>
@@ -35,7 +36,12 @@ export default function AdminOrders() {
                 <br />
                 <span className="text-ivory/40">{o.user?.email}</span>
               </td>
-              <td className="py-3 pr-4">{o.books.map((b) => b.book?.title).join(", ")}</td>
+              <td className="py-3 pr-4">
+                {o.books.length > 0 ? o.books.map((b) => b.book?.title).join(", ") : "—"}
+              </td>
+              <td className="py-3 pr-4">
+                {o.templates.length > 0 ? o.templates.map((t) => t.template?.title).join(", ") : "—"}
+              </td>
               <td className="py-3 pr-4">${o.totalAmount.toFixed(2)}</td>
               <td className="py-3 pr-4 capitalize">
                 <span

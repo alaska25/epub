@@ -4,6 +4,7 @@ import Footer from "./components/Footer.jsx";
 import { ProtectedRoute, AdminRoute } from "./components/RouteGuards.jsx";
 import { AuthModalProvider } from "./context/AuthModalContext.jsx";
 import AuthModal from "./components/AuthModal.jsx";
+import ToastContainer from "./components/ToastContainer.jsx";
 
 import Home from "./pages/Home.jsx";
 import Catalog from "./pages/Catalog.jsx";
@@ -83,6 +84,7 @@ export default function App() {
         <Footer />
         <ChatWidget />
         <AuthModal />
+        <ToastContainer />
       </div>
     </AuthModalProvider>
   );
