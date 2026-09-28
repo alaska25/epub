@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import api from "../api/axios.js";
 import { useCart } from "../context/CartContext.jsx";
 import { flyToCart } from "../utils/flyToCart.js";
@@ -13,6 +13,7 @@ export default function Templates() {
   const [loading, setLoading] = useState(true);
   const [addedId, setAddedId] = useState(null);
   const { items, addItem } = useCart();
+  const navigate = useNavigate();
 
   const search = searchParams.get("search") || "";
   const category = searchParams.get("category") || "";
@@ -60,6 +61,14 @@ export default function Templates() {
     addItem(template);
     setAddedId(template._id);
     setTimeout(() => setAddedId((id) => (id === template._id ? null : id)), 1500);
+  };
+
+  // Plain navigation rather than a nested <Link> — the whole card is
+  // already an <a>, and an <a> inside an <a> is invalid/unpredictable.
+  const handleViewDetails = (e, template) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/template/${template._id}`);
   };
 
   return (
@@ -131,6 +140,14 @@ export default function Templates() {
                         {inCart ? "In cart" : justAdded ? "Added ✓" : "Add to cart"}
                       </button>
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => handleViewDetails(e, t)}
+                      className="mt-3 flex w-full items-center justify-center rounded-full border border-navy-700 px-4 py-2 text-sm font-medium text-ivory/80 transition-colors hover:border-gold-500 hover:text-gold-400"
+                    >
+                      View Details
+                    </button>
                   </div>
                 </Link>
               );

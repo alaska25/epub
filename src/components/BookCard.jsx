@@ -29,6 +29,14 @@ function BookCard({ book, showAddToCart = false, compact = false }) {
     });
   };
 
+  // A plain button rather than a nested <Link> — the whole card is already
+  // an <a>, and browsers handle a <a> inside an <a> unpredictably.
+  const handleViewDetails = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/book/${book._id}`);
+  };
+
   return (
     <Link to={`/book/${book._id}`} className="group block w-full text-left">
       <div className="relative aspect-[2/3] w-full overflow-hidden rounded-md bg-navy-800">
@@ -110,6 +118,15 @@ function BookCard({ book, showAddToCart = false, compact = false }) {
           </svg>
           {/* Text label only in full layout — icon-only button in compact mode */}
           {!compact && (book.isFree ? "Get free" : inCart ? "In cart" : "Add to Cart")}
+        </button>
+      )}
+
+      {!compact && (
+        <button
+          onClick={handleViewDetails}
+          className="mt-2 flex w-full items-center justify-center rounded-full border border-navy-700 px-4 py-2 text-sm font-medium text-ivory/80 transition-colors hover:border-gold-500 hover:text-gold-400"
+        >
+          View Details
         </button>
       )}
     </Link>
