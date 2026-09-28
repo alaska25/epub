@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import api from "../api/axios.js";
 import Reveal from "./Reveal.jsx";
@@ -12,6 +12,7 @@ export default function TemplateShowcase() {
   const [loading, setLoading] = useState(true);
   const [addedId, setAddedId] = useState(null);
   const { items, addItem } = useCart();
+  const navigate = useNavigate();
   const addedTimerRef = useRef(null);
 
   useEffect(() => {
@@ -43,6 +44,14 @@ export default function TemplateShowcase() {
       () => setAddedId((id) => (id === template._id ? null : id)),
       1500
     );
+  };
+
+  // Plain navigation rather than a nested <Link> — the whole card is
+  // already an <a>, and an <a> inside an <a> is invalid/unpredictable.
+  const handleViewDetails = (e, template) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/template/${template._id}`);
   };
 
   return (
@@ -98,6 +107,14 @@ export default function TemplateShowcase() {
                       {inCart ? t("templates.inCart") : justAdded ? t("templates.added") : t("templates.addToCart")}
                     </button>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={(e) => handleViewDetails(e, template)}
+                    className="mt-3 flex w-full items-center justify-center rounded-full border border-navy-700 px-4 py-2 text-sm font-medium text-ivory/80 transition-colors hover:border-gold-500 hover:text-gold-400"
+                  >
+                    {t("templates.viewDetails", "View Details")}
+                  </button>
                 </div>
               </Link>
             );
