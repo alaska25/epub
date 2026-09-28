@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import api from "../api/axios.js";
 import { useCart } from "../context/CartContext.jsx";
 import { flyToCart } from "../utils/flyToCart.js";
+import BackButton from "../components/BackButton.jsx";
 
 export default function Templates() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -73,6 +74,8 @@ export default function Templates() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
+      <BackButton fallback="/" className="mb-6" />
+
       <h1 className="font-display text-3xl tracking-tight text-ivory">Templates</h1>
       <p className="mt-2 text-ivory/60">Production-ready starter kits for your next project.</p>
 
