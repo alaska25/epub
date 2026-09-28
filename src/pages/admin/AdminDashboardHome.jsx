@@ -28,11 +28,16 @@ const SOURCE_COLORS = {
   templates: "#60A5FA",
 };
 
-const formatMoney = (n) => `$${Number(n).toFixed(2)}`;
+// Returns the value if it is an array, otherwise an empty array.
+// Destructuring defaults only cover `undefined`, so this also covers `null`.
+const list = (v) => (Array.isArray(v) ? v : []);
+
+const formatMoney = (n) => `$${Number(n || 0).toFixed(2)}`;
 
 const formatShortDate = (isoDate) => {
-  const [, m, d] = isoDate.split("-");
-  return `${m}/${d}`;
+  const parts = String(isoDate ?? "").split("-");
+  if (parts.length < 3) return String(isoDate ?? "");
+  return `${parts[1]}/${parts[2]}`;
 };
 
 function SectionCard({ title, eyebrow, children, className = "" }) {
@@ -78,12 +83,12 @@ function ChartTooltip({ active, payload, label, formatter }) {
 // Generic "ranked list with a bar" — used for both top books and top
 // templates, since both shapes are just { title, unitsSold }.
 function TopSellersList({ items }) {
-  const maxUnits = Math.max(...items.map((b) => b.unitsSold), 1);
+  const maxUnits = Math.max(...items.map((b) => b.unitsSold || 0), 1);
 
   return (
     <div className="space-y-3">
       {items.slice(0, 5).map((item, i) => {
-        const pct = (item.unitsSold / maxUnits) * 100;
+        const pct = ((item.unitsSold || 0) / maxUnits) * 100;
         const isTop = i === 0;
         return (
           <div key={item.title} className="flex items-center gap-4">
@@ -99,7 +104,7 @@ function TopSellersList({ items }) {
               <div className="mb-1 flex items-center justify-between gap-2">
                 <p className="truncate text-sm text-ivory">{item.title}</p>
                 <p className={`shrink-0 text-sm font-medium ${isTop ? "text-gold-400" : "text-ivory/60"}`}>
-                  {item.unitsSold} sold
+                  {item.unitsSold || 0} sold
                 </p>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-navy-800">
@@ -117,9 +122,7 @@ function TopSellersList({ items }) {
       })}
 
       {items.length > 5 && (
-        <button className="mt-2 text-xs text-gold-400/80 hover:text-gold-400">
-          View all {items.length} →
-        </button>
+        <p className="mt-2 text-xs text-ivory/40">Showing top 5 of {items.length}</p>
       )}
     </div>
   );
@@ -128,7 +131,7 @@ function TopSellersList({ items }) {
 // Generic small donut chart with a legend — used for both Order Status
 // (by count) and Revenue Split (by amount).
 function DonutBreakdown({ data, dataKey, nameKey, colors, centerLabel, centerValue, tooltipFormatter }) {
-  const total = data.reduce((sum, d) => sum + d[dataKey], 0) || 1;
+  const total = data.reduce((sum, d) => sum + (d[dataKey] || 0), 0) || 1;
 
   return (
     <>
@@ -159,7 +162,7 @@ function DonutBreakdown({ data, dataKey, nameKey, colors, centerLabel, centerVal
 
       <div className="mt-6 space-y-2.5">
         {data.map((d) => {
-          const pct = Math.round((d[dataKey] / total) * 100);
+          const pct = Math.round(((d[dataKey] || 0) / total) * 100);
           return (
             <div key={d[nameKey]} className="flex items-center justify-between text-xs">
               <span className="flex items-center gap-2 capitalize text-ivory/70">
@@ -170,7 +173,7 @@ function DonutBreakdown({ data, dataKey, nameKey, colors, centerLabel, centerVal
                 {d[nameKey]}
               </span>
               <span className="text-ivory/45">
-                {tooltipFormatter ? tooltipFormatter(d[dataKey]) : d[dataKey]} · {pct}%
+                {tooltipFormatter ? tooltipFormatter(d[dataKey] || 0) : d[dataKey] || 0} · {pct}%
               </span>
             </div>
           );
@@ -211,9 +214,18 @@ export default function AdminDashboardHome() {
   if (error) return <p className="text-sm text-red-400">{error}</p>;
   if (!stats) return null;
 
-  const { totals, revenueByDay, userGrowthByDay, topBooks, topTemplates, orderStatus, revenueSplit } = stats;
-  const totalOrderCount = orderStatus.reduce((sum, s) => sum + s.count, 0) || 1;
-  const totalSignups = userGrowthByDay.reduce((sum, d) => sum + d.count, 0);
+  // Every field is normalised so a missing or null value from the API
+  // (for example an older backend without `revenueSplit`) cannot crash the page.
+  const totals = stats.totals || {};
+  const revenueByDay = list(stats.revenueByDay);
+  const userGrowthByDay = list(stats.userGrowthByDay);
+  const topBooks = list(stats.topBooks);
+  const topTemplates = list(stats.topTemplates);
+  const orderStatus = list(stats.orderStatus);
+  const revenueSplit = list(stats.revenueSplit);
+
+  const totalOrderCount = orderStatus.reduce((sum, s) => sum + (s.count || 0), 0) || 1;
+  const totalSignups = userGrowthByDay.reduce((sum, d) => sum + (d.count || 0), 0);
   const hasRevenueSplit = revenueSplit.some((s) => s.revenue > 0);
 
   return (
@@ -225,9 +237,9 @@ export default function AdminDashboardHome() {
             <p className="mt-1 text-xs text-ivory/40">Paid orders, all time</p>
 
             <div className="mt-8 flex gap-6">
-              <StatItem label="Orders" value={totals.totalOrders} />
-              <StatItem label="Active Users" value={totals.activeUsers} />
-              <StatItem label="Books Listed" value={totals.totalBooks} />
+              <StatItem label="Orders" value={totals.totalOrders ?? 0} />
+              <StatItem label="Active Users" value={totals.activeUsers ?? 0} />
+              <StatItem label="Books Listed" value={totals.totalBooks ?? 0} />
             </div>
           </div>
 
@@ -339,7 +351,7 @@ export default function AdminDashboardHome() {
               nameKey="source"
               colors={SOURCE_COLORS}
               centerLabel="Revenue"
-              centerValue={formatMoney(revenueSplit.reduce((sum, s) => sum + s.revenue, 0))}
+              centerValue={formatMoney(revenueSplit.reduce((sum, s) => sum + (s.revenue || 0), 0))}
               tooltipFormatter={formatMoney}
             />
           )}
