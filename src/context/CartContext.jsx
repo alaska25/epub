@@ -11,11 +11,19 @@ const readStored = (key, fallback) => {
   }
 };
 
-export const CartProvider = ({ children }) => {
-  const [items, setItems] = useState(() => readStored("adyoolau_cart", []));
+// Carts saved before templates were tagged with `itemType` would be sent to
+// checkout as books. Templates are the only items with a zip file, so tag
+// those on load. Entries that already have an itemType are left alone.
+const tagLegacyItems = (items) =>
+  items.map((item) =>
+    item.itemType || item.fileType !== "zip" ? item : { ...item, itemType: "template" }
+  );
 
-  // Ids of books the shopper un-ticked ("buy later"). Storing the exceptions,
-  // not the ticked ones, means every newly added book is ticked by default.
+export const CartProvider = ({ children }) => {
+  const [items, setItems] = useState(() => tagLegacyItems(readStored("adyoolau_cart", [])));
+
+  // Ids of items the shopper un-ticked ("buy later"). Storing the exceptions,
+  // not the ticked ones, means every newly added item is ticked by default.
   const [buyLaterIds, setBuyLaterIds] = useState(() => readStored("adyoolau_cart_later", []));
 
   useEffect(() => {
@@ -26,19 +34,19 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem("adyoolau_cart_later", JSON.stringify(buyLaterIds));
   }, [buyLaterIds]);
 
-  const addItem = (book) => {
-    setItems((prev) => (prev.some((b) => b._id === book._id) ? prev : [...prev, book]));
+  const addItem = (item) => {
+    setItems((prev) => (prev.some((i) => i._id === item._id) ? prev : [...prev, item]));
   };
 
-  const removeItem = (bookId) => {
-    setItems((prev) => prev.filter((b) => b._id !== bookId));
-    setBuyLaterIds((prev) => prev.filter((id) => id !== bookId));
+  const removeItem = (itemId) => {
+    setItems((prev) => prev.filter((i) => i._id !== itemId));
+    setBuyLaterIds((prev) => prev.filter((id) => id !== itemId));
   };
 
-  // Remove several books at once, e.g. only the ones that were just purchased.
-  const removeItems = (bookIds) => {
-    const ids = new Set(bookIds);
-    setItems((prev) => prev.filter((b) => !ids.has(b._id)));
+  // Remove several items at once, e.g. only the ones that were just purchased.
+  const removeItems = (itemIds) => {
+    const ids = new Set(itemIds);
+    setItems((prev) => prev.filter((i) => !ids.has(i._id)));
     setBuyLaterIds((prev) => prev.filter((id) => !ids.has(id)));
   };
 
@@ -47,25 +55,25 @@ export const CartProvider = ({ children }) => {
     setBuyLaterIds([]);
   };
 
-  // --- Selection: which books are ticked for purchase right now ---
-  const isSelected = (bookId) => !buyLaterIds.includes(bookId);
+  // --- Selection: which items are ticked for purchase right now ---
+  const isSelected = (itemId) => !buyLaterIds.includes(itemId);
 
-  const toggleSelected = (bookId) => {
+  const toggleSelected = (itemId) => {
     setBuyLaterIds((prev) =>
-      prev.includes(bookId) ? prev.filter((id) => id !== bookId) : [...prev, bookId]
+      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
     );
   };
 
   const selectAll = () => setBuyLaterIds([]);
-  const deselectAll = () => setBuyLaterIds(items.map((b) => b._id));
+  const deselectAll = () => setBuyLaterIds(items.map((i) => i._id));
 
-  const selectedItems = items.filter((b) => isSelected(b._id));
+  const selectedItems = items.filter((i) => isSelected(i._id));
   const allSelected = items.length > 0 && selectedItems.length === items.length;
 
-  // `total` is what the shopper is about to pay: ticked books only.
-  const total = selectedItems.reduce((sum, b) => sum + b.price, 0);
+  // `total` is what the shopper is about to pay: ticked items only.
+  const total = selectedItems.reduce((sum, i) => sum + i.price, 0);
   // Value of everything in the cart, ticked or not.
-  const cartTotal = items.reduce((sum, b) => sum + b.price, 0);
+  const cartTotal = items.reduce((sum, i) => sum + i.price, 0);
 
   return (
     <CartContext.Provider

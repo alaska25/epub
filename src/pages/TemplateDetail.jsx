@@ -59,7 +59,10 @@ export default function TemplateDetail() {
 
   const handleAddToCart = () => {
     flyToCart(coverRef.current);
-    addItem(template);
+    // Tag the item as a template so the cart sends it to checkout as one.
+    // Without this, checkout can mistake it for a book (bookIds) and the
+    // backend fails to find it, so the buyer can't pay.
+    addItem({ ...template, itemType: "template" });
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };
