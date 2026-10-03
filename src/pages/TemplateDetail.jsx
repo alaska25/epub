@@ -86,9 +86,31 @@ export default function TemplateDetail() {
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-12">
-      <Link to="/templates" className="text-sm text-ivory/50 hover:text-ivory">
-        ← Back to templates
-      </Link>
+      {/* Back goes to the templates listing; Home is a quiet icon-only
+          shortcut on the opposite end, matching the book detail page. */}
+      <div className="flex items-center justify-between">
+        <Link to="/templates" className="text-sm text-ivory/50 hover:text-ivory">
+          ← Back to templates
+        </Link>
+        <Link
+          to="/"
+          aria-label="Home"
+          title="Home"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full text-ivory/50 transition-colors hover:text-gold-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+            className="h-[18px] w-[18px]"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 11.5 12 4l9 7.5" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 10v9a1 1 0 0 0 1 1h3.5v-5.5h4V20H17.5a1 1 0 0 0 1-1v-9" />
+          </svg>
+        </Link>
+      </div>
 
       <div className="mt-6 grid gap-10 md:grid-cols-2">
         <img

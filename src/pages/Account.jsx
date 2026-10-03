@@ -243,7 +243,30 @@ export default function Account() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
-      <BackButton fallback="/" className="mb-6" />
+      {/* Back on the left; a quiet icon-only Home shortcut on the right,
+          matching the book and template detail pages. */}
+      <div className="mb-6 flex items-center justify-between">
+        <BackButton fallback="/" />
+        <Link
+          to="/"
+          aria-label="Home"
+          title="Home"
+          className="-mr-2 inline-flex h-10 items-center gap-2 rounded-full px-2 text-ivory/70 transition-colors hover:bg-ivory/5 hover:text-gold-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400 sm:px-3"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+            className="h-[18px] w-[18px]"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 11.5 12 4l9 7.5" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 10v9a1 1 0 0 0 1 1h3.5v-5.5h4V20H17.5a1 1 0 0 0 1-1v-9" />
+          </svg>
+          <span className="hidden text-sm sm:inline">Home</span>
+        </Link>
+      </div>
       <h1 className="font-display text-3xl text-ivory">Your account</h1>
 
       <div role="tablist" className="mt-6 flex gap-2 border-b border-navy-700/60">
