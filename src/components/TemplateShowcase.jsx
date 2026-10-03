@@ -37,7 +37,9 @@ export default function TemplateShowcase() {
     const imgEl = e.currentTarget.closest("a")?.querySelector("img");
     flyToCart(imgEl);
 
-    addItem(template);
+    // Tag the item as a template so the cart sends it to checkout as one.
+    // Without this, checkout treats it as a book (bookIds) and create-order fails with a 400.
+    addItem({ ...template, itemType: "template" });
     setAddedId(template._id);
     clearTimeout(addedTimerRef.current);
     addedTimerRef.current = setTimeout(

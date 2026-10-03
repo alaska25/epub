@@ -1,4 +1,4 @@
-// Shows the user's photo, or their initials when they have none.
+// Shows the user's photo (photoUrl), or their initials when there is none.
 export default function Avatar({ user, size = 64, className = "" }) {
   const label = (user?.name || user?.email || "?").trim();
   const initials = label
@@ -8,13 +8,13 @@ export default function Avatar({ user, size = 64, className = "" }) {
     .join("");
   const style = { width: size, height: size, fontSize: size * 0.38 };
 
-  if (user?.avatarUrl) {
+  if (user?.photoUrl) {
     return (
       <img
-        src={user.avatarUrl}
+        src={user.photoUrl}
         alt=""
         style={style}
-        className={`shrink-0 rounded-full border border-navy-700 object-cover ${className}`}
+        className={`shrink-0 rounded-full border border-navy-700/60 object-cover ${className}`}
       />
     );
   }
@@ -22,7 +22,7 @@ export default function Avatar({ user, size = 64, className = "" }) {
     <div
       aria-hidden="true"
       style={style}
-      className={`flex shrink-0 items-center justify-center rounded-full bg-gold-500/15 font-display font-semibold text-gold-400 ${className}`}
+      className={`flex shrink-0 items-center justify-center rounded-full border border-navy-700/60 bg-navy-900 font-display text-ivory/50 ${className}`}
     >
       {initials}
     </div>

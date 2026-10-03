@@ -33,6 +33,8 @@ const Terms = lazy(() => import("./pages/Terms.jsx"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy.jsx"));
 const Templates = lazy(() => import("./pages/Templates.jsx"));
 const TemplateDetail = lazy(() => import("./pages/TemplateDetail.jsx"));
+const Account = lazy(() => import("./pages/Account.jsx"));
+const Receipt = lazy(() => import("./pages/Receipt.jsx"));
 
 // Simple, unobtrusive fallback shown only while a lazy chunk is fetching —
 // normally invisible on a fast connection since chunks are small and cached
@@ -70,6 +72,22 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <MyLibrary />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/account"
+                element={
+                  <ProtectedRoute>
+                    <Account />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/account/orders/:id/receipt"
+                element={
+                  <ProtectedRoute>
+                    <Receipt />
                   </ProtectedRoute>
                 }
               />

@@ -2,8 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import api from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { pushToast } from "../utils/toastStore.js";
 import Avatar from "../components/Avatar.jsx";
 import BackButton from "../components/BackButton.jsx";
+
+// Success and error toasts for these calls come from the axios interceptor
+// (see describeAction in api/axios.js), so this page only handles its own state.
 
 const TABS = [
   ["profile", "Profile"],
@@ -22,72 +26,46 @@ const btnPrimary =
 const btnGhost =
   "rounded-full border border-navy-700 px-5 py-2.5 text-sm font-medium text-ivory/80 hover:border-gold-500/60 hover:text-gold-400 disabled:cursor-not-allowed disabled:opacity-50";
 
-function Message({ msg }) {
-  if (!msg.text) return null;
-  return (
-    <p role="status" className={`mt-4 text-sm ${msg.type === "ok" ? "text-gold-400" : "text-red-400"}`}>
-      {msg.text}
-    </p>
-  );
-}
-
 /* ------------------------------ Profile ------------------------------ */
 
-function ProfileTab({ me, onChange }) {
-  const [name, setName] = useState(me.name || "");
+function ProfileTab() {
+  const { user, updateUser } = useAuth();
+  const [name, setName] = useState(user?.name || "");
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState({ type: "", text: "" });
   const fileRef = useRef(null);
-  const flash = (type, text) => setMsg({ type, text });
 
   const saveName = async (e) => {
     e.preventDefault();
     setBusy(true);
-    flash("", "");
     try {
       const { data } = await api.patch("/account/profile", { name });
-      onChange(data);
-      flash("ok", "Profile saved.");
-    } catch (err) {
-      flash("err", err.response?.data?.message || "Could not save your profile.");
+      updateUser({ name: data.name });
+    } catch {
+      /* the interceptor already showed the error toast */
     } finally {
       setBusy(false);
     }
   };
 
+  // Reuses the same endpoint the admin dashboard uses for its photo.
   const pickFile = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = ""; // lets the same file be chosen again later
     if (!file) return;
-    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return flash("err", "Use a JPG, PNG or WebP image.");
-    if (file.size > 2 * 1024 * 1024) return flash("err", "Image must be 2 MB or smaller.");
-
-    const form = new FormData();
-    form.append("avatar", file);
+    if (!/^image\/(jpeg|png)$/.test(file.type)) {
+      pushToast({ type: "error", message: "Please choose a JPG or PNG image." });
+      return;
+    }
     setBusy(true);
-    flash("", "");
     try {
-      const { data } = await api.post("/account/avatar", form, {
+      const form = new FormData();
+      form.append("photo", file);
+      const { data } = await api.post("/auth/photo", form, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      onChange(data);
-      flash("ok", "Photo updated.");
-    } catch (err) {
-      flash("err", err.response?.data?.message || "Could not upload the photo.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const removePhoto = async () => {
-    setBusy(true);
-    flash("", "");
-    try {
-      const { data } = await api.delete("/account/avatar");
-      onChange(data);
-      flash("ok", "Photo removed.");
-    } catch (err) {
-      flash("err", err.response?.data?.message || "Could not remove the photo.");
+      updateUser({ photoUrl: data.photoUrl });
+    } catch {
+      /* the interceptor already showed the error toast */
     } finally {
       setBusy(false);
     }
@@ -96,20 +74,13 @@ function ProfileTab({ me, onChange }) {
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-5">
-        <Avatar user={me} size={88} />
+        <Avatar user={user} size={88} />
         <div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" className={btnGhost} disabled={busy} onClick={() => fileRef.current?.click()}>
-              {me.avatarUrl ? "Change photo" : "Upload photo"}
-            </button>
-            {me.avatarUrl && (
-              <button type="button" className={btnGhost} disabled={busy} onClick={removePhoto}>
-                Remove
-              </button>
-            )}
-          </div>
-          <p className="mt-2 text-xs text-ivory/50">JPG, PNG or WebP, up to 2 MB.</p>
-          <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={pickFile} />
+          <button type="button" className={btnGhost} disabled={busy} onClick={() => fileRef.current?.click()}>
+            {user?.photoUrl ? "Change photo" : "Upload photo"}
+          </button>
+          <p className="mt-2 text-xs text-ivory/50">JPG or PNG.</p>
+          <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png" className="hidden" onChange={pickFile} />
         </div>
       </div>
 
@@ -120,13 +91,12 @@ function ProfileTab({ me, onChange }) {
         </div>
         <div>
           <label htmlFor="acc-email" className="mb-1.5 block text-sm text-ivory/70">Email</label>
-          <input id="acc-email" className={`${inputCls} opacity-60`} value={me.email} disabled readOnly />
+          <input id="acc-email" className={`${inputCls} opacity-60`} value={user?.email || ""} disabled readOnly />
         </div>
-        <button type="submit" className={btnPrimary} disabled={busy || !name.trim()}>
+        <button type="submit" className={btnPrimary} disabled={busy || !name.trim() || name.trim() === user?.name}>
           {busy ? "Saving…" : "Save changes"}
         </button>
       </form>
-      <Message msg={msg} />
     </div>
   );
 }
@@ -139,7 +109,7 @@ function OrdersTab() {
 
   useEffect(() => {
     api
-      .get("/account/orders")
+      .get("/account/orders", { silent: true })
       .then(({ data }) => setOrders(data))
       .catch(() => setError("Could not load your orders."));
   }, []);
@@ -201,13 +171,12 @@ function OrdersTab() {
 
 /* ----------------------------- Security ------------------------------ */
 
-function SecurityTab({ me }) {
+function SecurityTab({ hasPassword }) {
   const [form, setForm] = useState({ currentPassword: "", newPassword: "", confirm: "" });
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState({ type: "", text: "" });
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  if (!me.hasPassword) {
+  if (!hasPassword) {
     return (
       <p className="max-w-md text-sm text-ivory/70">
         This account signs in with Google, so there is no password to manage here.
@@ -217,18 +186,19 @@ function SecurityTab({ me }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (form.newPassword !== form.confirm) return setMsg({ type: "err", text: "The new passwords do not match." });
+    if (form.newPassword !== form.confirm) {
+      pushToast({ type: "error", message: "The new passwords do not match." });
+      return;
+    }
     setBusy(true);
-    setMsg({ type: "", text: "" });
     try {
       await api.post("/account/password", {
         currentPassword: form.currentPassword,
         newPassword: form.newPassword,
       });
       setForm({ currentPassword: "", newPassword: "", confirm: "" });
-      setMsg({ type: "ok", text: "Password updated." });
-    } catch (err) {
-      setMsg({ type: "err", text: err.response?.data?.message || "Could not update your password." });
+    } catch {
+      /* the interceptor already showed the error toast */
     } finally {
       setBusy(false);
     }
@@ -252,7 +222,6 @@ function SecurityTab({ me }) {
       <button type="submit" className={btnPrimary} disabled={busy}>
         {busy ? "Updating…" : "Update password"}
       </button>
-      <Message msg={msg} />
     </form>
   );
 }
@@ -260,37 +229,17 @@ function SecurityTab({ me }) {
 /* ------------------------------- Page -------------------------------- */
 
 export default function Account() {
-  const auth = useAuth();
-  const { user } = auth;
   const [params, setParams] = useSearchParams();
   const tab = TABS.some(([id]) => id === params.get("tab")) ? params.get("tab") : "profile";
-  const [me, setMe] = useState(null);
-  const [error, setError] = useState("");
+  const [hasPassword, setHasPassword] = useState(null); // null while loading
 
+  // Only used to learn whether this account has a password (Google-only accounts do not).
   useEffect(() => {
-    if (!user) return;
     api
-      .get("/account/me")
-      .then(({ data }) => setMe(data))
-      .catch(() => setError("Could not load your account."));
-  }, [user]);
-
-  // Update this page and the navbar/AuthContext after a change.
-  // ASSUMPTION: useAuth() exposes setUser. If it does not, the navbar updates on next refresh.
-  const applyChange = (patch) => {
-    setMe((m) => ({ ...m, ...patch }));
-    if (typeof auth.setUser === "function") auth.setUser({ ...auth.user, ...patch });
-  };
-
-  if (!user) {
-    return (
-      <div className="mx-auto max-w-xl px-6 py-24 text-center">
-        <h1 className="font-display text-3xl text-ivory">Your account</h1>
-        <p className="mt-3 text-ivory/60">Please sign in to see your account.</p>
-        <Link to="/login" className={`${btnPrimary} mt-6 inline-block`}>Sign in</Link>
-      </div>
-    );
-  }
+      .get("/account/me", { silent: true })
+      .then(({ data }) => setHasPassword(Boolean(data.hasPassword)))
+      .catch(() => setHasPassword(true));
+  }, []);
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
@@ -314,17 +263,10 @@ export default function Account() {
       </div>
 
       <div className="mt-8" role="tabpanel">
-        {error ? (
-          <p className="text-sm text-red-400">{error}</p>
-        ) : !me ? (
-          <p className="text-sm text-ivory/50">Loading…</p>
-        ) : tab === "profile" ? (
-          <ProfileTab me={me} onChange={applyChange} />
-        ) : tab === "orders" ? (
-          <OrdersTab />
-        ) : (
-          <SecurityTab me={me} />
-        )}
+        {tab === "profile" && <ProfileTab />}
+        {tab === "orders" && <OrdersTab />}
+        {tab === "security" &&
+          (hasPassword === null ? <p className="text-sm text-ivory/50">Loading…</p> : <SecurityTab hasPassword={hasPassword} />)}
       </div>
     </div>
   );

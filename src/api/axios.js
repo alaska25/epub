@@ -30,6 +30,9 @@ function describeAction(method, url = "") {
   if (/\/auth\/register/i.test(path)) return "Account created successfully";
   if (/\/paypal\/capture-order/i.test(path)) return "Payment confirmed";
   if (/\/paypal\/create-order/i.test(path)) return "Checkout started";
+  if (/\/auth\/photo/i.test(path)) return "Photo updated";
+  if (/\/account\/password/i.test(path)) return "Password updated";
+  if (/\/account\/profile/i.test(path)) return "Profile saved";
 
   switch (method?.toUpperCase()) {
     case "POST":
