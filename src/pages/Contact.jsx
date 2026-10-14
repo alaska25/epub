@@ -14,10 +14,10 @@ export default function Contact() {
         <div className="rounded-lg border border-navy-700/60 bg-navy-900 p-6">
           <p className="text-sm uppercase tracking-wide text-gold-500/80">{t("contact.emailLabel")}</p>
 
-          <a href="mailto:support@adyoolau.com"
+          <a href="mailto:adyoolau@gmail.com"
             className="mt-1 block font-display text-xl text-ivory hover:text-gold-400"
           >
-            support@adyoolau.com
+            adyoolau@gmail.com
           </a>
         </div>
 

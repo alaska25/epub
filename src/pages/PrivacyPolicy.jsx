@@ -41,8 +41,8 @@ export default function PrivacyPolicy() {
         </ul>
         <p>
           {t("privacyPolicy.exerciseChoicesIntro")}{" "}
-          <a href="mailto:support@adyoolau.com" className="text-gold-400 hover:text-gold-300">
-            support@adyoolau.com
+          <a href="mailto:adyoolau@gmail.com" className="text-gold-400 hover:text-gold-300">
+            adyoolau@gmail.com
           </a>
           . {t("privacyPolicy.exerciseChoicesOutro")}
         </p>
@@ -56,8 +56,8 @@ export default function PrivacyPolicy() {
         <h2 className="font-display text-2xl text-ivory pt-4">{t("privacyPolicy.contactHeading")}</h2>
         <p>
           {t("privacyPolicy.contactBody")}{" "}
-          <a href="mailto:support@adyoolau.com" className="text-gold-400 hover:text-gold-300">
-            support@adyoolau.com
+          <a href="mailto:adyoolau@gmail.com" className="text-gold-400 hover:text-gold-300">
+            adyoolau@gmail.com
           </a>
           .
         </p>

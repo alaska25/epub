@@ -48,8 +48,8 @@ export default function RefundPolicy() {
         <h2 className="font-display text-2xl text-ivory pt-4">{t("refundPolicy.howToRequestHeading")}</h2>
         <p>
           {t("refundPolicy.howToRequestIntro")}{" "}
-          <a href="mailto:support@adyoolau.com" className="text-gold-400 hover:text-gold-300">
-            support@adyoolau.com
+          <a href="mailto:adyoolau@gmail.com" className="text-gold-400 hover:text-gold-300">
+            adyoolau@gmail.com
           </a>{" "}
           {t("refundPolicy.howToRequestBody")}
         </p>

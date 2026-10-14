@@ -59,8 +59,8 @@ export default function Terms() {
         <h2 className="font-display text-2xl text-ivory pt-4">{t("terms.section13.heading")}</h2>
         <p>
           {t("terms.section13.bodyIntro")}{" "}
-          <a href="mailto:support@adyoolau.com" className="text-gold-400 hover:text-gold-300">
-            support@adyoolau.com
+          <a href="mailto:adyoolau@gmail.com" className="text-gold-400 hover:text-gold-300">
+            adyoolau@gmail.com
           </a>
           .
         </p>
