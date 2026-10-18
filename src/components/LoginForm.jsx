@@ -35,7 +35,9 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToFor
       navigate("/admin/dashboard");
     } else if (data.role === "admin") {
       navigate("/admin/books");
-    } else {
+    } else if (!onSuccess) {
+      // Full-page /login with nowhere to return to: go home.
+      // In the modal (onSuccess provided), stay on the current page.
       navigate("/");
     }
   };
@@ -131,7 +133,11 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToFor
               Create one
             </button>
           ) : (
-            <Link to="/register" className="text-gold-400 hover:text-gold-300">
+            <Link
+              to="/register"
+              state={location.state}
+              className="text-gold-400 hover:text-gold-300"
+            >
               Create one
             </Link>
           )}

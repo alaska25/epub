@@ -31,8 +31,7 @@ export default function BookDetail() {
   useEffect(() => {
     // Without this, navigating here from a scrolled-down position on the
     // catalog or a home carousel (common on mobile) leaves this page
-    // rendered at that same scroll offset — landing near the reviews or
-    // footer instead of the top of the new book's page.
+    // rendered at that same scroll offset.
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
 
     api
@@ -177,13 +176,9 @@ export default function BookDetail() {
 
   return (
     <div className="mx-auto max-w-5xl px-6 pb-16 pt-8">
-      {/* Back goes to wherever the visitor came from (catalog, home
-          carousel, search…), falling back to the catalog if the page was
-          opened directly (e.g. a shared link). Home is a second, explicit
-          way out that's always the same destination regardless of history —
-          useful since Back's fallback here is the catalog, not "/". Placed
-          on the opposite end of the row, icon-only, so it reads as a quiet
-          secondary shortcut rather than competing with Back for attention. */}
+      {/* Back goes to wherever the visitor came from, falling back to the
+          catalog if the page was opened directly. Home is a second, explicit
+          way out that's always the same destination. */}
       <div className="mb-8 flex items-center justify-between">
         <BackButton fallback="/catalog" />
         <Link
@@ -212,7 +207,7 @@ export default function BookDetail() {
         <div className="w-full">
           <img
             src={book.coverUrl}
-            alt={`Cover of ${book.title}`}
+            alt={t("bookDetail.coverAlt", { title: book.title, defaultValue: `Cover of ${book.title}` })}
             className="aspect-[2/3] w-full rounded-md object-cover shadow-2xl shadow-black/50"
           />
         </div>
@@ -239,13 +234,11 @@ export default function BookDetail() {
             </span>
           </div>
 
-          {/* Price + purchase action, right under the rating so the
-              CTA is visible without scrolling. "Read sample" now sits
-              alongside it as a lighter, secondary action instead of a
-              full-width button competing with "Add to cart". */}
+          {/* Price + purchase action, right under the rating so the CTA is
+              visible without scrolling. */}
           <div className="mt-5 flex flex-wrap items-center gap-4">
             <span className="font-display text-3xl font-semibold text-gold-400">
-              {book.isFree ? t("bookDetail.free") : `$${book.price.toFixed(2)}`}
+              {book.isFree ? t("bookDetail.free") : `$${(book.price ?? 0).toFixed(2)}`}
             </span>
 
             {owned ? (
@@ -263,20 +256,27 @@ export default function BookDetail() {
               >
                 {claimingFree ? t("bookDetail.gettingFree") : t("bookDetail.getForFree")}
               </button>
+            ) : inCart ? (
+              <Link
+                to="/cart"
+                className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400"
+              >
+                {t("bookDetail.viewCart", "View cart & checkout")}
+              </Link>
             ) : (
               <button
                 onClick={handleAddToCart}
-                disabled={inCart || addingToCart}
+                disabled={addingToCart}
                 className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400 disabled:opacity-50"
               >
-                {inCart ? t("bookDetail.inYourCart") : addingToCart ? t("bookDetail.addingToCart") : t("bookDetail.addToCart")}
+                {addingToCart ? t("bookDetail.addingToCart") : t("bookDetail.addToCart")}
               </button>
             )}
 
             {!owned && book.sampleFileType && (
               <button
                 onClick={() => navigate(`/sample/${book._id}`)}
-                className="text-sm font-medium text-gold-400 underline-offset-4 hover:text-gold-300 hover:underline"
+                className="rounded-full border border-gold-500/60 px-6 py-3 text-sm font-medium text-gold-400 transition-colors hover:bg-gold-500/10"
               >
                 {t("bookDetail.readSample")}
               </button>
@@ -285,12 +285,16 @@ export default function BookDetail() {
 
           {claimError && <p className="mt-2 text-sm text-red-400">{claimError}</p>}
 
-          {!user && <p className="mt-2 text-sm text-ivory/40">{t("bookDetail.signInToBuyOrRead")}</p>}
+          {!owned && !book.isFree && (
+            <p className="mt-3 text-sm text-ivory/50">
+              {t("bookDetail.trustLine", "Instant access after payment. Secure checkout.")}{" "}
+              <Link to="/refund-policy" className="underline underline-offset-4 hover:text-ivory/80">
+                {t("bookDetail.refundPolicy", "Refund policy")}
+              </Link>
+            </p>
+          )}
 
-          {/* Book details row — always shows Format/Category (already
-              hinted at by the badges above, but spelled out here for
-              scannability), plus page count / publish year when the
-              book record has them. */}
+          {/* Book details row */}
           <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-ivory/60">
             {book.fileType && (
               <div className="flex gap-1.5">
@@ -318,7 +322,7 @@ export default function BookDetail() {
             )}
           </dl>
 
-          {/* Typography Description View Box */}
+          {/* Description */}
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-ivory/80 whitespace-pre-line tracking-wide">
             {book.description}
           </p>
@@ -338,11 +342,11 @@ export default function BookDetail() {
         </div>
       </div>
 
-      {/* Bottom Section: Customer Reviews Feed Layout */}
+      {/* Bottom Section: Customer Reviews */}
       <div className="mt-16 border-t border-navy-700/60 pt-10">
         <h2 className="font-display text-2xl text-ivory">{t("bookDetail.reviewsHeading")}</h2>
 
-        {/* Dynamic Submission Form for verified buyers */}
+        {/* Submission form for verified buyers */}
         {owned && !myReview && (
           <form onSubmit={handleSubmitReview} className="mt-6 max-w-xl space-y-3">
             <StarRating value={myRating} onChange={setMyRating} size={22} />
@@ -368,7 +372,7 @@ export default function BookDetail() {
           <p className="mt-6 text-sm text-ivory/40">{t("bookDetail.onlyOwnersCanReview")}</p>
         )}
 
-        {/* Dynamic Reviews Loops Feed List */}
+        {/* Reviews list */}
         <div className="mt-8 space-y-6">
           {reviews.length === 0 ? (
             <p className="text-ivory/50">{t("bookDetail.noReviewsMessage")}</p>

@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import api from "../api/axios.js";
 import HeroCarousel from "../components/HeroCarousel.jsx";
 import BookCarousel from "../components/BookCarousel.jsx";
 import Reveal from "../components/Reveal.jsx";
-import LaunchCountdown from "../components/LaunchCountdown.jsx";
 import TemplateShowcase from "../components/TemplateShowcase.jsx";
 
-// Only icons + translation KEYS live here now — the actual title/description
+// Only icons + translation KEYS live here; the actual title/description
 // text comes from the active locale file via t().
 const FEATURES = [
   {
@@ -52,8 +52,8 @@ const FEATURES = [
   },
 ];
 
-// Mirrors FEATURES above, but scoped to what a developer actually cares
-// about when evaluating a starter template rather than an ebook.
+// Mirrors FEATURES above, but scoped to what a developer cares about when
+// evaluating a starter template rather than an ebook.
 const TEMPLATE_FEATURES = [
   {
     key: "fullSource",
@@ -97,6 +97,13 @@ const TEMPLATE_FEATURES = [
   },
 ];
 
+// "Read before you buy" steps. Defaults are used until you add locale keys.
+const STEPS = [
+  { key: "find", title: "Find a book", body: "Browse the catalog by category or search by title." },
+  { key: "sample", title: "Read a free sample", body: "Try the first chapter. No account needed." },
+  { key: "own", title: "Buy once, keep it", body: "It opens in your library right away." },
+];
+
 const FOCUS_RING =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400";
 
@@ -104,6 +111,7 @@ export default function Home() {
   const { t } = useTranslation();
   const [featured, setFeatured] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [email, setEmail] = useState("");
   const [subStatus, setSubStatus] = useState("");
   const [subscribing, setSubscribing] = useState(false);
@@ -112,7 +120,7 @@ export default function Home() {
     api
       .get("/books", { params: { limit: 12 } })
       .then(({ data }) => setFeatured(data.books))
-      .catch(() => {})
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -134,21 +142,19 @@ export default function Home() {
 
   return (
     <div>
-      {/* Hero — stays as-is, it's above the fold so no reveal needed */}
+      {/* Hero: above the fold, so no reveal needed */}
       <HeroCarousel />
-
-      {/* Launch countdown */}
-      <Reveal>
-        <LaunchCountdown
-          launchDate="2026-10-15T09:00:00+09:00"
-          liveUrl="https://adyoolau.vercel.app"
-        />
-      </Reveal>
 
       {/* Featured books */}
       {loading ? (
         <div className="mx-auto max-w-6xl px-6 py-16">
           <p className="text-ivory/50">{t("common.loadingBooks")}</p>
+        </div>
+      ) : error ? (
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <p className="text-ivory/60">
+            {t("common.booksError", "We couldn't load books. Please refresh the page.")}
+          </p>
         </div>
       ) : featured.length === 0 ? (
         <div className="mx-auto max-w-6xl px-6 py-16">
@@ -160,8 +166,36 @@ export default function Home() {
         </Reveal>
       )}
 
-      {/* Trust features — books */}
+      {/* Read before you buy */}
       <section className="border-t border-navy-700/60 bg-navy-900/40">
+        <div className="mx-auto max-w-6xl px-6 py-14">
+          <h2 className="font-sans text-3xl font-bold tracking-[-0.03em] text-ivory">
+            {t("howItWorks.title", "Read before you buy")}
+          </h2>
+          <ol className="mt-8 grid gap-6 md:grid-cols-3">
+            {STEPS.map((s, i) => (
+              <li key={s.key}>
+                <span className="font-sans text-3xl font-bold text-gold-400">{i + 1}</span>
+                <p className="mt-2 text-base font-semibold text-ivory">
+                  {t(`howItWorks.${s.key}.title`, s.title)}
+                </p>
+                <p className="mt-1 text-sm text-ivory/60">
+                  {t(`howItWorks.${s.key}.body`, s.body)}
+                </p>
+              </li>
+            ))}
+          </ol>
+          <Link
+            to="/catalog"
+            className={`mt-8 inline-block rounded-full bg-gold-500 px-6 py-3 text-sm font-semibold text-ink hover:bg-gold-400 ${FOCUS_RING}`}
+          >
+            {t("howItWorks.cta", "Browse the catalog")}
+          </Link>
+        </div>
+      </section>
+
+      {/* Trust features: books */}
+      <section className="border-t border-navy-700/60">
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-12 md:grid-cols-4">
           {FEATURES.map((f, i) => (
             <Reveal key={f.key} delay={i * 100}>
@@ -191,7 +225,7 @@ export default function Home() {
       {/* Templates for developers */}
       <TemplateShowcase />
 
-      {/* Trust features — templates (mirrors the books strip above, own audience) */}
+      {/* Trust features: templates */}
       <section className="border-t border-navy-700/60">
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-12 md:grid-cols-4">
           {TEMPLATE_FEATURES.map((f, i) => (
@@ -219,7 +253,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Newsletter — kept neutral so it lands for both readers and developers */}
+      {/* Newsletter: neutral so it lands for both readers and developers */}
       <section className="border-t border-navy-700/60">
         <Reveal className="mx-auto max-w-3xl px-6 py-16 text-center">
           <p className="inline-flex items-center gap-2 rounded-full border border-[#22c55e]/30 bg-[#22c55e]/10 px-3 py-1.5 text-xs font-medium text-ivory/80">

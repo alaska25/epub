@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import api from "../api/axios.js";
@@ -60,6 +60,11 @@ export default function Cart() {
 
   useEffect(() => {
     if (!user || !hasSelection) return;
+
+    if (!import.meta.env.VITE_PAYPAL_CLIENT_ID) {
+      setError("Checkout is not configured yet.");
+      return;
+    }
 
     let cancelled = false;
 
@@ -130,7 +135,15 @@ export default function Cart() {
       <h1 className="font-display text-3xl text-ivory">Your cart</h1>
 
       {items.length === 0 ? (
-        <p className="mt-8 text-ivory/50">Your cart is empty.</p>
+        <div className="mt-8">
+          <p className="text-ivory/60">Your cart is empty.</p>
+          <Link
+            to="/catalog"
+            className="mt-4 inline-block rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400"
+          >
+            Browse books
+          </Link>
+        </div>
       ) : (
         <div className="mt-8">
           <div className="flex items-center justify-between border-b border-navy-700/60 pb-3 text-sm">
@@ -172,7 +185,12 @@ export default function Cart() {
                   />
                   <div className={`min-w-0 flex-1 transition-opacity ${selected ? "" : "opacity-50"}`}>
                     <div className="flex items-center gap-2">
-                      <p className="truncate font-display text-lg text-ivory">{item.title}</p>
+                      <Link
+                        to={template ? `/template/${item._id}` : `/book/${item._id}`}
+                        className="truncate font-display text-lg text-ivory hover:text-gold-400"
+                      >
+                        {item.title}
+                      </Link>
                       {template && (
                         <span className="shrink-0 rounded-full border border-gold-500/30 bg-gold-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-gold-400">
                           Template
@@ -183,7 +201,7 @@ export default function Cart() {
                     {!selected && <p className="mt-0.5 text-xs text-gold-400">Saved for later</p>}
                   </div>
                   <span className={`text-gold-400 ${selected ? "" : "opacity-50"}`}>
-                    {item.isFree ? "Free" : `$${item.price.toFixed(2)}`}
+                    {item.isFree ? "Free" : `$${(item.price ?? 0).toFixed(2)}`}
                   </span>
                   <button
                     onClick={() => removeItem(item._id)}
@@ -212,16 +230,34 @@ export default function Cart() {
           {!hasSelection ? (
             <p className="text-sm text-ivory/50">Tick at least one item to check out.</p>
           ) : !user ? (
-            <button
-              onClick={() => navigate("/login")}
-              className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400"
-            >
-              Sign in to check out
-            </button>
+            <div>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => navigate("/register", { state: { from: "/cart" } })}
+                  className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400"
+                >
+                  Create account to check out
+                </button>
+                <button
+                  onClick={() => navigate("/login", { state: { from: "/cart" } })}
+                  className="text-sm font-medium text-gold-400 underline-offset-4 hover:underline"
+                >
+                  I already have an account
+                </button>
+              </div>
+              {/* Only keep this line if CartContext persists items in localStorage */}
+              <p className="mt-3 text-sm text-ivory/50">Your cart is saved while you sign up.</p>
+            </div>
           ) : (
             <div className="max-w-xs">
               <div ref={buttonsContainerRef} />
               {!paypalReady && <p className="text-sm text-ivory/40">Loading PayPal…</p>}
+              <p className="mt-3 text-xs leading-relaxed text-ivory/50">
+                Secure payment with PayPal. Your purchase opens in your library right after payment.{" "}
+                <Link to="/refund-policy" className="underline underline-offset-2 hover:text-ivory/80">
+                  Refund policy
+                </Link>
+              </p>
             </div>
           )}
         </div>

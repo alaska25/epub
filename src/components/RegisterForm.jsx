@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useBotGuard } from "../hooks/useBotGuard.js";
@@ -28,6 +28,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
   const turnstileRef = useRef(null);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { honeypot, setHoneypot, isBot } = useBotGuard();
 
   const handleSubmit = async (e) => {
@@ -53,7 +54,13 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
     try {
       await register(name, email, password, captchaToken);
       onSuccess?.();
-      navigate("/");
+      if (location.state?.from) {
+        navigate(location.state.from);
+      } else if (!onSuccess) {
+        // Full-page /register with nowhere to return to: go home.
+        // In the modal (onSuccess provided), stay on the current page.
+        navigate("/");
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Could not create account.");
       // Tokens are single-use — reset the widget so they can retry.
@@ -144,7 +151,11 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
             Sign in
           </button>
         ) : (
-          <Link to="/login" className="text-gold-400 hover:text-gold-300">
+          <Link
+            to="/login"
+            state={location.state}
+            className="text-gold-400 hover:text-gold-300"
+          >
             Sign in
           </Link>
         )}
