@@ -33,7 +33,8 @@ const SLIDE_META = [
   },
 ];
 
-const AUTO_ADVANCE_MS = 6500;
+// Slightly longer than before so people can finish reading each slide.
+const AUTO_ADVANCE_MS = 8000;
 
 const FOCUS_RING =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400";
@@ -113,6 +114,8 @@ export default function HeroCarousel() {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const timerRef = useRef(null);
+  // Counts automatic advances so each slide is shown once, then autoplay stops.
+  const ticksRef = useRef(0);
 
   // Build the full slide objects (translated text + static meta) on each
   // render so a language change immediately updates the copy.
@@ -137,7 +140,14 @@ export default function HeroCarousel() {
 
     timerRef.current = setInterval(() => {
       // Don't churn through slides in a background tab.
-      if (!document.hidden) advance();
+      if (document.hidden) return;
+      // Show each slide once, then stay put on the last one.
+      if (ticksRef.current >= SLIDE_META.length - 1) {
+        clearInterval(timerRef.current);
+        return;
+      }
+      ticksRef.current += 1;
+      advance();
     }, AUTO_ADVANCE_MS);
     return () => clearInterval(timerRef.current);
   }, [advance, index, paused]);
