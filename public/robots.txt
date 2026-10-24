@@ -1,0 +1,12 @@
+User-agent: *
+Disallow: /admin
+Disallow: /cart
+Disallow: /library
+Disallow: /account
+Disallow: /read/
+Disallow: /checkout
+Disallow: /login
+Disallow: /register
+Disallow: /reset-password
+
+Sitemap: https://adyoolau.com/sitemap.xml
