@@ -67,6 +67,9 @@ export default function AdminTemplateForm() {
   const [cover, setCover] = useState(null);
   const [templateFile, setTemplateFile] = useState(null);
   const [currentCoverUrl, setCurrentCoverUrl] = useState(null);
+  // False when this template has no zip uploaded yet, so we don't offer a
+  // download link that can only fail.
+  const [hasFile, setHasFile] = useState(true);
   const [saving, setSaving] = useState(false);
   const [downloadingFile, setDownloadingFile] = useState(false);
   const [error, setError] = useState("");
@@ -75,27 +78,36 @@ export default function AdminTemplateForm() {
 
   useEffect(() => {
     if (!isEditing) return;
-    api.get(`/templates/${id}`).then(({ data }) => {
-      setForm({
-        title: data.title,
-        tagline: data.tagline || "",
-        description: data.description,
-        category: data.category,
-        techStack: (data.techStack || []).join(", "),
-        version: data.version || "",
-        repoUrl: data.repoUrl || "",
-        liveDemoUrl: data.liveDemoUrl || "",
-        price: data.price,
-        isFree: data.isFree,
-        featured: data.featured,
+    api
+      .get(`/templates/${id}`)
+      .then(({ data }) => {
+        setForm({
+          title: data.title,
+          tagline: data.tagline || "",
+          description: data.description,
+          category: data.category,
+          techStack: (data.techStack || []).join(", "),
+          version: data.version || "",
+          repoUrl: data.repoUrl || "",
+          liveDemoUrl: data.liveDemoUrl || "",
+          price: data.price,
+          isFree: data.isFree,
+          featured: data.featured,
+        });
+        setCurrentCoverUrl(data.coverUrl || null);
+        // fileKey is hidden from this public endpoint, but fileType is set
+        // whenever a zip was uploaded (createTemplate / uploadTemplateFile).
+        setHasFile(Boolean(data.fileType));
+      })
+      .catch((err) => {
+        setError(err.response?.data?.message || "Could not load this template.");
       });
-      setCurrentCoverUrl(data.coverUrl || null);
-    });
   }, [id, isEditing]);
 
   const update = (key, value) => setForm((f) => ({ ...f, [key]: value }));
 
   const handleDownloadFile = async () => {
+    setError("");
     setDownloadingFile(true);
     try {
       const { data } = await api.get(`/templates/${id}/file`);
@@ -260,10 +272,16 @@ export default function AdminTemplateForm() {
           <div>
             <label className="mb-1 block text-sm text-ivory/60">Template zip</label>
             <p className="mb-1.5 text-xs text-ivory/40">Choosing a new file replaces the current one when you save.</p>
-            <button type="button" onClick={handleDownloadFile} disabled={downloadingFile}
-              className="mb-2 text-sm text-gold-400 hover:text-gold-300 disabled:opacity-50">
-              {downloadingFile ? "Getting link…" : "Download current file"}
-            </button>
+            {hasFile ? (
+              <button type="button" onClick={handleDownloadFile} disabled={downloadingFile}
+                className="mb-2 text-sm text-gold-400 hover:text-gold-300 disabled:opacity-50">
+                {downloadingFile ? "Getting link…" : "Download current file"}
+              </button>
+            ) : (
+              <p className="mb-2 text-sm text-ivory/50">
+                No file uploaded yet. Choose a zip below and save.
+              </p>
+            )}
             <FileField accept=".zip" file={templateFile} onChange={setTemplateFile} />
           </div>
         </>

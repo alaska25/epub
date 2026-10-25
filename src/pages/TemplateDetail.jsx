@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuthModal } from "../context/AuthModalContext.jsx";
 import { flyToCart } from "../utils/flyToCart.js";
+import Seo from "../components/Seo.jsx";
 
 export default function TemplateDetail() {
   const { id } = useParams();
@@ -46,6 +47,7 @@ export default function TemplateDetail() {
   if (notFound || !template) {
     return (
       <div className="mx-auto max-w-xl px-6 py-24 text-center">
+        <Seo title="Template not found" noindex />
         <h1 className="font-display text-3xl text-ivory">Template not found</h1>
         <p className="mt-4 text-ivory/60">It may have been removed or unpublished.</p>
         <Link to="/templates" className="mt-6 inline-block text-gold-400 hover:text-gold-300">
@@ -56,6 +58,11 @@ export default function TemplateDetail() {
   }
 
   const inCart = items.some((i) => i._id === template._id);
+  const price = template.price ?? 0;
+
+  // The demo link is entered by an admin, so only allow real http(s) URLs
+  // (never javascript: or data: links).
+  const demoUrl = /^https?:\/\//i.test(template.liveDemoUrl || "") ? template.liveDemoUrl : null;
 
   const handleAddToCart = () => {
     flyToCart(coverRef.current);
@@ -86,6 +93,28 @@ export default function TemplateDetail() {
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-12">
+      <Seo
+        title={template.title}
+        description={(template.tagline || template.description || "").replace(/\s+/g, " ").slice(0, 155)}
+        path={`/template/${template._id}`}
+        image={template.coverUrl}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: template.title,
+          image: template.coverUrl,
+          description: template.tagline || template.description,
+          category: template.category,
+          offers: {
+            "@type": "Offer",
+            price: template.isFree ? 0 : price,
+            priceCurrency: "USD",
+            availability: "https://schema.org/InStock",
+            url: `https://adyoolau.com/template/${template._id}`,
+          },
+        }}
+      />
+
       {/* Back goes to the templates listing; Home is a quiet icon-only
           shortcut on the opposite end, matching the book detail page. */}
       <div className="flex items-center justify-between">
@@ -126,9 +155,9 @@ export default function TemplateDetail() {
           <h1 className="mt-2 font-display text-3xl tracking-tight text-ivory">{template.title}</h1>
           {template.tagline && <p className="mt-2 text-ivory/60">{template.tagline}</p>}
 
-          <div className="mt-6 flex items-center gap-4">
+          <div className="mt-6 flex flex-wrap items-center gap-4">
             <p className="font-display text-2xl text-ivory">
-              {template.isFree ? "Free" : `$${template.price.toFixed(2)}`}
+              {template.isFree ? "Free" : `$${price.toFixed(2)}`}
             </p>
 
             {template.isFree ? (
@@ -139,16 +168,42 @@ export default function TemplateDetail() {
               >
                 {claiming ? "Adding…" : "Get for free"}
               </button>
+            ) : inCart ? (
+              <Link
+                to="/cart"
+                className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400"
+              >
+                View cart &amp; checkout
+              </Link>
             ) : (
               <button
                 onClick={handleAddToCart}
-                disabled={inCart}
-                className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400 disabled:cursor-default disabled:bg-navy-700 disabled:text-ivory/40"
+                className="rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-ink hover:bg-gold-400"
               >
-                {inCart ? "In cart" : added ? "Added ✓" : "Add to cart"}
+                {added ? "Added ✓" : "Add to cart"}
               </button>
             )}
+
+            {demoUrl && (
+              <a
+                href={demoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-gold-500/60 px-6 py-3 text-sm font-medium text-gold-400 transition-colors hover:bg-gold-500/10"
+              >
+                View live demo ↗
+              </a>
+            )}
           </div>
+
+          {!template.isFree && (
+            <p className="mt-3 text-sm text-ivory/50">
+              Available in your library right after payment. Secure checkout.{" "}
+              <Link to="/refund-policy" className="underline underline-offset-4 hover:text-ivory/80">
+                Refund policy
+              </Link>
+            </p>
+          )}
 
           {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
 
@@ -176,16 +231,6 @@ export default function TemplateDetail() {
                 <dd className="mt-0.5 text-ivory/80">{template.version}</dd>
               </div>
             )}
-            {template.liveDemoUrl && (
-              <div>
-                <dt className="text-ivory/40">Live demo</dt>
-                <dd className="mt-0.5">
-                  <a href={template.liveDemoUrl} target="_blank" rel="noopener noreferrer" className="text-gold-400 hover:text-gold-300">
-                    View demo ↗
-                  </a>
-                </dd>
-              </div>
-            )}
             {template.repoUrl && (
               <div>
                 <dt className="text-ivory/40">Preview repo</dt>
@@ -199,6 +244,33 @@ export default function TemplateDetail() {
           </dl>
         </div>
       </div>
+
+      {/* Live preview: desktop/tablet only. On phones a scrolling page inside
+          a page is awkward, so they use the "View live demo" button instead.
+          Some demo sites forbid being embedded, so a new-tab link stays
+          underneath as the fallback. */}
+      {demoUrl && (
+        <section className="mt-14 hidden border-t border-navy-700/60 pt-10 md:block">
+          <h2 className="font-display text-xl text-ivory">Live preview</h2>
+          <div className="mt-4 overflow-hidden rounded-xl border border-navy-700/60">
+            <iframe
+              src={demoUrl}
+              title={`${template.title} live preview`}
+              loading="lazy"
+              sandbox="allow-scripts allow-same-origin allow-popups"
+              className="h-[560px] w-full bg-white"
+            />
+          </div>
+          <a
+            href={demoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-block text-sm text-gold-400 hover:text-gold-300"
+          >
+            Preview not loading? Open the demo in a new tab ↗
+          </a>
+        </section>
+      )}
 
       {(template.readme || template.fileTree?.length > 0) && (
         <div className="mt-14 border-t border-navy-700/60 pt-10">
