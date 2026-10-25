@@ -19,10 +19,12 @@ const emptyForm = {
 function FileField({ label, hint, accept, file, onChange, required }) {
   return (
     <div>
-      <label className="mb-1 block text-sm text-ivory/60">
-        {label}
-        {required && <span className="ml-1 text-red-400">*</span>}
-      </label>
+      {label && (
+        <label className="mb-1 block text-sm text-ivory/60">
+          {label}
+          {required && <span className="ml-1 text-red-400">*</span>}
+        </label>
+      )}
       {hint && <p className="mb-1.5 text-xs text-ivory/40">{hint}</p>}
 
       {file ? (
@@ -52,7 +54,10 @@ async function uploadFile(url, fieldName, file, setError, failureNote) {
   try {
     const data = new FormData();
     data.append(fieldName, file);
-    await api.post(url, data, { headers: { "Content-Type": "multipart/form-data" } });
+    await api.post(url, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 180000, // zips can be big; the default 15s is too short
+    });
     return true;
   } catch (err) {
     setError((err.response?.data?.message || failureNote) + " The rest of the template's details were saved.");
@@ -67,9 +72,9 @@ export default function AdminTemplateForm() {
   const [cover, setCover] = useState(null);
   const [templateFile, setTemplateFile] = useState(null);
   const [currentCoverUrl, setCurrentCoverUrl] = useState(null);
-  // False when this template has no zip uploaded yet, so we don't offer a
-  // download link that can only fail.
-  const [hasFile, setHasFile] = useState(true);
+  // Starts false and is set from the server's hasFile flag, so we never offer
+  // a download link that can only fail.
+  const [hasFile, setHasFile] = useState(false);
   const [saving, setSaving] = useState(false);
   const [downloadingFile, setDownloadingFile] = useState(false);
   const [error, setError] = useState("");
@@ -95,9 +100,8 @@ export default function AdminTemplateForm() {
           featured: data.featured,
         });
         setCurrentCoverUrl(data.coverUrl || null);
-        // fileKey is hidden from this public endpoint, but fileType is set
-        // whenever a zip was uploaded (createTemplate / uploadTemplateFile).
-        setHasFile(Boolean(data.fileType));
+        // The public endpoint hides fileKey and returns this flag instead.
+        setHasFile(Boolean(data.hasFile));
       })
       .catch((err) => {
         setError(err.response?.data?.message || "Could not load this template.");
@@ -110,8 +114,9 @@ export default function AdminTemplateForm() {
     setError("");
     setDownloadingFile(true);
     try {
-      const { data } = await api.get(`/templates/${id}/file`);
-      window.open(data.url, "_blank", "noopener,noreferrer");
+      const { data } = await api.get(`/templates/${id}/file`, { silent: true });
+      // The signed URL sends an attachment header, so the page stays put.
+      window.location.assign(data.url);
     } catch (err) {
       setError(err.response?.data?.message || "Could not get a download link for the current file.");
     } finally {
@@ -142,6 +147,7 @@ export default function AdminTemplateForm() {
         if (templateFile) {
           const ok = await uploadFile(`/templates/${id}/file`, "templateFile", templateFile, setError, "Could not upload the template file.");
           if (!ok) { setSaving(false); return; }
+          setHasFile(true);
         }
       } else {
         if (!cover || !templateFile) {
@@ -153,7 +159,10 @@ export default function AdminTemplateForm() {
         Object.entries(form).forEach(([k, v]) => data.append(k, v));
         data.append("cover", cover);
         data.append("templateFile", templateFile);
-        await api.post("/templates", data, { headers: { "Content-Type": "multipart/form-data" } });
+        await api.post("/templates", data, {
+          headers: { "Content-Type": "multipart/form-data" },
+          timeout: 180000,
+        });
       }
 
       setSuccess(true);
