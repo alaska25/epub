@@ -5,12 +5,14 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { pushToast } from "../utils/toastStore.js";
 import Avatar from "../components/Avatar.jsx";
 import BackButton from "../components/BackButton.jsx";
+import LibraryPanel from "../components/LibraryPanel.jsx";
 
 // Success and error toasts for these calls come from the axios interceptor
 // (see describeAction in api/axios.js), so this page only handles its own state.
 
 const TABS = [
   ["profile", "Profile"],
+  ["library", "Library"],
   ["orders", "Orders"],
   ["security", "Security"],
 ];
@@ -161,7 +163,7 @@ function OrdersTab() {
             <Link to={`/account/orders/${o._id}/receipt`} className="text-gold-400 hover:text-gold-300">
               View receipt
             </Link>
-            <Link to="/library" className="text-ivory/60 hover:text-ivory">Go to My Library</Link>
+            <Link to="/account?tab=library" className="text-ivory/60 hover:text-ivory">Go to My Library</Link>
           </div>
         </li>
       ))}
@@ -269,14 +271,14 @@ export default function Account() {
       </div>
       <h1 className="font-display text-3xl text-ivory">Your account</h1>
 
-      <div role="tablist" className="mt-6 flex gap-2 border-b border-navy-700/60">
+      <div role="tablist" className="mt-6 flex gap-2 overflow-x-auto border-b border-navy-700/60">
         {TABS.map(([id, label]) => (
           <button
             key={id}
             role="tab"
             aria-selected={tab === id}
             onClick={() => setParams({ tab: id })}
-            className={`-mb-px border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
+            className={`-mb-px shrink-0 border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
               tab === id ? "border-gold-500 text-gold-400" : "border-transparent text-ivory/60 hover:text-ivory"
             }`}
           >
@@ -287,6 +289,7 @@ export default function Account() {
 
       <div className="mt-8" role="tabpanel">
         {tab === "profile" && <ProfileTab />}
+        {tab === "library" && <LibraryPanel />}
         {tab === "orders" && <OrdersTab />}
         {tab === "security" &&
           (hasPassword === null ? <p className="text-sm text-ivory/50">Loading…</p> : <SecurityTab hasPassword={hasPassword} />)}
