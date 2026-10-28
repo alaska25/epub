@@ -247,23 +247,6 @@ export default function HeroCarousel() {
       </div>
 
       {/* ───────────── DESKTOP / TABLET (md and up) ───────────── */}
-      {/* Full-bleed background image. */}
-      <div className="absolute inset-0 hidden md:block">
-        {SLIDES.map((s, i) => (
-          <div
-            key={s.key}
-            className={`absolute inset-0 transition-opacity duration-1000 motion-reduce:transition-none ${
-              i === index ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <SlideImage src={s.image} first={i === 0} />
-          </div>
-        ))}
-        {/* Scrim is near-opaque under the text column so lettering baked into
-            the photos can't show through the headline. */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink via-ink/90 to-ink/20" />
-      </div>
-
       <div className="relative mx-auto hidden max-w-6xl items-center gap-10 px-6 md:grid md:min-h-[560px] md:grid-cols-[1.2fr,1fr] md:py-20">
         <div>
           {/* All slides share ONE grid cell, so this block is always as tall
@@ -321,6 +304,25 @@ export default function HeroCarousel() {
           <div className="mt-10">
             <Controls {...controlProps} />
           </div>
+        </div>
+
+        {/* Picture column: slides crossfade in the same spot, beside the text
+            instead of behind it, so nothing overlaps the copy. */}
+        <div className="relative h-[420px] lg:h-[480px]" aria-hidden="true">
+          {SLIDES.map((s, i) => (
+            <div
+              key={s.key}
+              className={`absolute inset-0 flex items-center justify-center transition-opacity duration-1000 motion-reduce:transition-none ${
+                i === index ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <SlideImage
+                src={s.image}
+                first={i === 0}
+                className="max-h-full max-w-full rounded-2xl object-contain shadow-2xl"
+              />
+            </div>
+          ))}
         </div>
       </div>
     </section>
