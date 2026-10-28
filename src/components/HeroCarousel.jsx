@@ -3,9 +3,9 @@ import { useTranslation } from "react-i18next";
 import { InfoLink } from "./InfoModal.jsx";
 // TIP: convert these to .webp (see scripts/compress-images.mjs) and change
 // the extensions below, e.g. "./images/29342.webp".
-import image29342 from "./images/29342.jpg";
-import image29340 from "./images/29340.jpg";
-import image29339 from "./images/29339.jpg";
+import image31235 from "./images/31235.png";
+import image29236 from "./images/29236.jpg";
+import image29204 from "./images/29204.jpg";
 
 // Slide copy comes from translation keys (heroCarousel.slide1/2/3.*);
 // only the images and link targets stay hardcoded here.
@@ -14,21 +14,21 @@ const SLIDE_META = [
     key: "slide1",
     primaryTo: "/catalog",
     secondaryTo: "/catalog?search=free",
-    image: image29342,
+    image: image31235,
     hasNote: false,
   },
   {
     key: "slide2",
     primaryTo: "/catalog",
     secondaryTo: "/refund-policy",
-    image: image29339,
+    image: image29236,
     hasNote: false,
   },
   {
     key: "slide3",
     primaryTo: "/catalog?search=free",
     secondaryTo: "/about",
-    image: image29340,
+    image: image29204,
     hasNote: true,
   },
 ];
@@ -189,7 +189,11 @@ export default function HeroCarousel() {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
-      onBlur={() => setPaused(false)}
+      onBlur={(e) => {
+        // Only unpause when focus leaves the hero entirely, not when it
+        // moves between elements inside it.
+        if (!e.currentTarget.contains(e.relatedTarget)) setPaused(false);
+      }}
     >
       {/* ───────────── MOBILE: compact banner card + dots ─────────────
           Text and one button on the left, picture on the right, dots below
@@ -247,7 +251,7 @@ export default function HeroCarousel() {
       <div className="absolute inset-0 hidden md:block">
         {SLIDES.map((s, i) => (
           <div
-            key={s.image}
+            key={s.key}
             className={`absolute inset-0 transition-opacity duration-1000 motion-reduce:transition-none ${
               i === index ? "opacity-100" : "opacity-0"
             }`}
