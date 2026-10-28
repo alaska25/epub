@@ -6,6 +6,20 @@ import BookCard from "../components/BookCard.jsx";
 import BackButton from "../components/BackButton.jsx";
 import Reveal from "../components/Reveal.jsx";
 
+// Books in the first row skip the fade-in and get high-priority images, so the
+// top of the page appears at once. The rest keep the animation and lazy images.
+const PRIORITY_COUNT = 4;
+
+function SkeletonBook() {
+  return (
+    <div>
+      <div className="aspect-[2/3] w-full animate-pulse rounded-md bg-navy-800" />
+      <div className="mt-3 h-4 w-3/4 animate-pulse rounded-full bg-navy-800" />
+      <div className="mt-2 h-3 w-1/2 animate-pulse rounded-full bg-navy-800" />
+    </div>
+  );
+}
+
 export default function Catalog() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -13,6 +27,8 @@ export default function Catalog() {
   const [categories, setCategories] = useState([]);
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   const search = searchParams.get("search") || "";
   const category = searchParams.get("category") || "";
@@ -26,27 +42,37 @@ export default function Catalog() {
   }, [search, isFreeFilter]);
 
   useEffect(() => {
-    api.get("/books/categories").then(({ data }) => setCategories(data)).catch(() => {});
+    api
+      .get("/books/categories", { silent: true })
+      .then(({ data }) => setCategories(data))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
-    let ignore = false;
+    let ignore = false; // stops a slow, older response overwriting a newer one
     setLoading(true);
+    setLoadError(false);
     api
-      .get("/books", { params: { search, category, page, limit: 12 } })
+      .get("/books", {
+        params: { search, category, page, limit: 12 },
+        timeout: 45000, // allows for a sleeping backend waking up
+        silent: true,
+      })
       .then(({ data }) => {
         if (ignore) return;
         setBooks(data.books);
         setPages(data.pages);
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!ignore) setLoadError(true);
+      })
       .finally(() => {
         if (!ignore) setLoading(false);
       });
     return () => {
       ignore = true;
     };
-  }, [search, category, page]);
+  }, [search, category, page, retryKey]);
 
   const updateParam = (key, value) => {
     const next = new URLSearchParams(searchParams);
@@ -102,7 +128,31 @@ export default function Catalog() {
       </div>
 
       {loading ? (
-        <p className="mt-12 text-ivory/50">{t("common.loadingBooks")}</p>
+        <div
+          className="mt-10 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 md:grid-cols-4"
+          aria-busy="true"
+          aria-label={t("common.loadingBooks")}
+        >
+          {Array.from({ length: 8 }, (_, i) => (
+            <SkeletonBook key={i} />
+          ))}
+        </div>
+      ) : loadError ? (
+        <div className="mt-12 rounded-2xl border border-dashed border-navy-700 px-6 py-14 text-center">
+          <p className="font-display text-lg text-ivory">
+            {t("catalog.loadError", "Couldn't load books")}
+          </p>
+          <p className="mt-1 text-sm text-ivory/60">
+            {t("catalog.loadErrorHint", "The server may be waking up. Please try again in a moment.")}
+          </p>
+          <button
+            type="button"
+            onClick={() => setRetryKey((k) => k + 1)}
+            className="mt-5 rounded-full bg-gold-500 px-6 py-2.5 text-sm font-medium text-ink hover:bg-gold-400"
+          >
+            {t("catalog.tryAgain", "Try again")}
+          </button>
+        </div>
       ) : books.length === 0 ? (
         <p className="mt-12 text-ivory/50">
           {isFreeFilter ? t("catalog.noFreeBooks") : t("catalog.noResults")}
@@ -110,11 +160,15 @@ export default function Catalog() {
       ) : (
         <>
           <div className="mt-10 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 md:grid-cols-4">
-            {books.map((book, i) => (
-              <Reveal key={book._id} delay={Math.min(i * 50, 400)}>
-                <BookCard book={book} showAddToCart />
-              </Reveal>
-            ))}
+            {books.map((book, i) =>
+              i < PRIORITY_COUNT ? (
+                <BookCard key={book._id} book={book} showAddToCart priority={i === 0 ? "high" : true} />
+              ) : (
+                <Reveal key={book._id} delay={Math.min((i - PRIORITY_COUNT) * 50, 400)}>
+                  <BookCard book={book} showAddToCart />
+                </Reveal>
+              )
+            )}
           </div>
 
           {pages > 1 && (

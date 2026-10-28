@@ -11,6 +11,9 @@ const focusRing =
 const chipBase =
   "h-9 shrink-0 whitespace-nowrap rounded-full border px-4 text-sm font-medium transition-colors";
 
+// Images in the first row load right away; the rest wait until they are near the screen.
+const EAGER_COUNT = 3;
+
 function SkeletonCard() {
   return (
     <div className="overflow-hidden rounded-3xl border border-white/5 bg-navy-900/40 p-2.5">
@@ -32,6 +35,8 @@ export default function Templates() {
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const [addedId, setAddedId] = useState(null);
   const { items, addItem } = useCart();
   const navigate = useNavigate();
@@ -42,20 +47,40 @@ export default function Templates() {
   const limit = 9;
 
   useEffect(() => {
-    api.get("/templates/categories").then(({ data }) => setCategories(data)).catch(() => {});
+    api
+      .get("/templates/categories", { silent: true })
+      .then(({ data }) => setCategories(data))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
+    // `cancelled` stops a slow, older response from overwriting a newer one
+    // when filters change quickly.
+    let cancelled = false;
     setLoading(true);
+    setLoadError(false);
     api
-      .get("/templates", { params: { search: search || undefined, category: category || undefined, page, limit } })
+      .get("/templates", {
+        params: { search: search || undefined, category: category || undefined, page, limit },
+        timeout: 45000, // allows for a sleeping backend waking up
+        silent: true,
+      })
       .then(({ data }) => {
+        if (cancelled) return;
         setTemplates(data.templates);
         setTotal(data.total);
         setPages(data.pages);
       })
-      .finally(() => setLoading(false));
-  }, [search, category, page]);
+      .catch(() => {
+        if (!cancelled) setLoadError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [search, category, page, retryKey]);
 
   const updateParam = (key, value) => {
     const next = new URLSearchParams(searchParams);
@@ -143,7 +168,7 @@ export default function Templates() {
             </button>
           )}
 
-          {!loading && templates.length > 0 && (
+          {!loading && !loadError && templates.length > 0 && (
             <p className="text-sm tabular-nums text-ivory/50 sm:ml-auto" aria-live="polite">
               {total} template{total !== 1 ? "s" : ""}
             </p>
@@ -194,6 +219,20 @@ export default function Templates() {
             <SkeletonCard key={i} />
           ))}
         </div>
+      ) : loadError ? (
+        <div className="mt-14 rounded-3xl border border-dashed border-white/10 bg-white/[0.02] px-6 py-16 text-center">
+          <p className="font-display text-xl font-semibold text-ivory">Couldn't load templates</p>
+          <p className="mt-2 text-sm text-ivory/60">
+            The server may be waking up. Please try again in a moment.
+          </p>
+          <button
+            type="button"
+            onClick={() => setRetryKey((k) => k + 1)}
+            className={`mt-6 h-11 rounded-full bg-gold-500 px-6 text-sm font-semibold text-ink transition-colors hover:bg-gold-400 ${focusRing}`}
+          >
+            Try again
+          </button>
+        </div>
       ) : templates.length === 0 ? (
         <div className="mt-14 rounded-3xl border border-dashed border-white/10 bg-white/[0.02] px-6 py-16 text-center">
           <p className="font-display text-xl font-semibold text-ivory">No templates found</p>
@@ -213,7 +252,7 @@ export default function Templates() {
       ) : (
         <>
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {templates.map((t) => {
+            {templates.map((t, index) => {
               const inCart = items.some((i) => i._id === t._id);
               const justAdded = addedId === t._id;
               const detailsPath = `/template/${t._id}`;
@@ -232,7 +271,8 @@ export default function Templates() {
                     <img
                       src={t.coverUrl}
                       alt={`Preview of ${t.title}`}
-                      loading="lazy"
+                      loading={index < EAGER_COUNT ? "eager" : "lazy"}
+                      fetchPriority={index === 0 ? "high" : undefined}
                       decoding="async"
                       className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                     />

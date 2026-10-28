@@ -26,7 +26,10 @@ function CartIcon({ className }) {
   );
 }
 
-function BookCard({ book, showAddToCart = false, compact = false }) {
+// priority: omit for the default lazy image. Pass `true` for images that are
+// visible on first load (loads right away), or "high" for the single most
+// important one (also raises its fetch priority).
+function BookCard({ book, showAddToCart = false, compact = false, priority = false }) {
   const { items, addItem } = useCart();
   const navigate = useNavigate();
   const inCart = items.some((b) => b._id === book._id);
@@ -71,7 +74,8 @@ function BookCard({ book, showAddToCart = false, compact = false }) {
           ref={imgRef}
           src={book.coverUrl}
           alt={`Cover of ${book.title}`}
-          loading="lazy"
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority === "high" ? "high" : undefined}
           decoding="async"
           width="400"
           height="600"
