@@ -107,22 +107,58 @@ const STEPS = [
 const FOCUS_RING =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400";
 
+// Placeholder row shown while the featured books load, so the space is
+// reserved and the page doesn't jump when the real carousel arrives.
+function CarouselSkeleton() {
+  return (
+    <div className="mx-auto max-w-6xl px-6 py-16" aria-busy="true">
+      <div className="h-7 w-48 animate-pulse rounded-full bg-navy-800" />
+      <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 md:grid-cols-4">
+        {Array.from({ length: 4 }, (_, i) => (
+          <div key={i}>
+            <div className="aspect-[2/3] w-full animate-pulse rounded-xl bg-navy-800" />
+            <div className="mt-3 h-4 w-3/4 animate-pulse rounded-full bg-navy-800" />
+            <div className="mt-2 h-3 w-1/2 animate-pulse rounded-full bg-navy-800" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const { t } = useTranslation();
   const [featured, setFeatured] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const [email, setEmail] = useState("");
   const [subStatus, setSubStatus] = useState("");
   const [subscribing, setSubscribing] = useState(false);
 
   useEffect(() => {
+    let ignore = false;
+    setLoading(true);
+    setError(false);
     api
-      .get("/books", { params: { limit: 12 } })
-      .then(({ data }) => setFeatured(data.books))
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, []);
+      .get("/books", {
+        params: { limit: 12 },
+        timeout: 45000, // allows for a sleeping backend waking up
+        silent: true, // the on-page message below replaces the generic toast
+      })
+      .then(({ data }) => {
+        if (!ignore) setFeatured(data.books);
+      })
+      .catch(() => {
+        if (!ignore) setError(true);
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false);
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [retryKey]);
 
   const handleSubscribe = async (e) => {
     e.preventDefault();
@@ -145,25 +181,29 @@ export default function Home() {
       {/* Hero: above the fold, so no reveal needed */}
       <HeroCarousel />
 
-      {/* Featured books */}
+      {/* Featured books. No Reveal here: this sits right under the hero, and a
+          fade-in would keep it invisible for a moment after the data arrives. */}
       {loading ? (
-        <div className="mx-auto max-w-6xl px-6 py-16">
-          <p className="text-ivory/50">{t("common.loadingBooks")}</p>
-        </div>
+        <CarouselSkeleton />
       ) : error ? (
         <div className="mx-auto max-w-6xl px-6 py-16">
           <p className="text-ivory/60">
-            {t("common.booksError", "We couldn't load books. Please refresh the page.")}
+            {t("common.booksError", "We couldn't load books. Please try again.")}
           </p>
+          <button
+            type="button"
+            onClick={() => setRetryKey((k) => k + 1)}
+            className={`mt-4 rounded-full bg-gold-500 px-6 py-2.5 text-sm font-semibold text-ink hover:bg-gold-400 ${FOCUS_RING}`}
+          >
+            {t("catalog.tryAgain", "Try again")}
+          </button>
         </div>
       ) : featured.length === 0 ? (
         <div className="mx-auto max-w-6xl px-6 py-16">
           <p className="text-ivory/50">{t("common.noBooksYet")}</p>
         </div>
       ) : (
-        <Reveal>
-          <BookCarousel books={featured} />
-        </Reveal>
+        <BookCarousel books={featured} />
       )}
 
       {/* Read before you buy */}

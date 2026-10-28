@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import api from "../api/axios.js";
 import Reveal from "./Reveal.jsx";
@@ -9,32 +9,65 @@ import { flyToCart } from "../utils/flyToCart.js";
 export default function TemplateShowcase() {
   const { t } = useTranslation();
   const [templates, setTemplates] = useState([]);
+  const [started, setStarted] = useState(false); // true once the section is near the screen
   const [loading, setLoading] = useState(true);
   const [addedId, setAddedId] = useState(null);
   const { items, addItem } = useCart();
-  const navigate = useNavigate();
+  const placeholderRef = useRef(null);
   const addedTimerRef = useRef(null);
 
+  // Start loading only when the section is about to scroll into view, so it
+  // doesn't compete with the featured books request at the top of the page.
   useEffect(() => {
-    api
-      .get("/templates", { params: { limit: 3 } })
-      .then(({ data }) => setTemplates(data.templates))
-      .catch((err) => console.error("Failed to load templates:", err))
-      .finally(() => setLoading(false));
-
-    return () => clearTimeout(addedTimerRef.current);
+    const node = placeholderRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") {
+      setStarted(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setStarted(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "600px 0px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!started) return;
+    let ignore = false;
+    api
+      .get("/templates", {
+        params: { limit: 3 },
+        timeout: 45000, // allows for a sleeping backend waking up
+        silent: true, // a secondary section: hide quietly instead of showing an error toast
+      })
+      .then(({ data }) => {
+        if (!ignore) setTemplates(data.templates);
+      })
+      .catch((err) => console.error("Failed to load templates:", err))
+      .finally(() => {
+        if (!ignore) setLoading(false);
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [started]);
+
+  useEffect(() => () => clearTimeout(addedTimerRef.current), []);
 
   // Reserve space while loading so the sections below don't jump down
   // when the templates arrive.
-  if (loading) return <section className="h-[520px]" aria-hidden="true" />;
+  if (loading) return <section ref={placeholderRef} className="h-[520px]" aria-hidden="true" />;
   if (templates.length === 0) return null;
 
   const handleAddToCart = (e, template) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const imgEl = e.currentTarget.closest("a")?.querySelector("img");
+    // The cover image lives in the same card (<article>) as the button
+    const imgEl = e.currentTarget.closest("article")?.querySelector("img");
     flyToCart(imgEl);
 
     // Tag the item as a template so the cart sends it to checkout as one.
@@ -46,14 +79,6 @@ export default function TemplateShowcase() {
       () => setAddedId((id) => (id === template._id ? null : id)),
       1500
     );
-  };
-
-  // Plain navigation rather than a nested <Link> — the whole card is
-  // already an <a>, and an <a> inside an <a> is invalid/unpredictable.
-  const handleViewDetails = (e, template) => {
-    e.preventDefault();
-    e.stopPropagation();
-    navigate(`/template/${template._id}`);
   };
 
   return (
@@ -75,50 +100,59 @@ export default function TemplateShowcase() {
           {templates.map((template) => {
             const inCart = items.some((i) => i._id === template._id);
             const justAdded = addedId === template._id;
+            const detailsPath = `/template/${template._id}`;
 
+            // <article> with separate links and buttons: no <button> inside an <a>
             return (
-              <Link
+              <article
                 key={template._id}
-                to={`/template/${template._id}`}
-                className="group overflow-hidden rounded-xl border border-navy-700/60 bg-navy-900/60 transition hover:border-gold-500/50"
+                className="group flex flex-col overflow-hidden rounded-xl border border-navy-700/60 bg-navy-900/60 transition hover:border-gold-500/50"
               >
-                <img
-                  src={template.coverUrl}
-                  alt={template.title}
-                  loading="lazy"
-                  decoding="async"
-                  width="600"
-                  height="160"
-                  className="h-40 w-full object-cover"
-                />
-                <div className="p-5">
-                  <p className="font-display text-lg text-ivory">{template.title}</p>
+                <Link to={detailsPath} aria-label={`View details for ${template.title}`} className="block">
+                  <img
+                    src={template.coverUrl}
+                    alt={template.title}
+                    loading="lazy"
+                    decoding="async"
+                    width="600"
+                    height="160"
+                    className="h-40 w-full object-cover"
+                  />
+                </Link>
+
+                <div className="flex flex-1 flex-col p-5">
+                  <h3 className="font-display text-lg text-ivory">
+                    <Link to={detailsPath} className="transition-colors hover:text-gold-400">
+                      {template.title}
+                    </Link>
+                  </h3>
                   {template.tagline && <p className="mt-1 text-sm text-ivory/60">{template.tagline}</p>}
 
-                  <div className="mt-4 flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-gold-400">
-                      {template.isFree ? t("templates.free") : `$${template.price.toFixed(2)}`}
-                    </p>
+                  <div className="mt-auto">
+                    <div className="mt-4 flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-gold-400">
+                        {template.isFree ? t("templates.free") : `$${template.price.toFixed(2)}`}
+                      </p>
 
-                    <button
-                      type="button"
-                      onClick={(e) => handleAddToCart(e, template)}
-                      disabled={inCart}
-                      className="shrink-0 rounded-full border border-gold-500/40 px-3.5 py-1.5 text-xs font-medium text-gold-400 transition hover:bg-gold-500/10 disabled:cursor-default disabled:border-navy-700 disabled:text-ivory/40 disabled:hover:bg-transparent"
+                      <button
+                        type="button"
+                        onClick={(e) => handleAddToCart(e, template)}
+                        disabled={inCart}
+                        className="shrink-0 rounded-full border border-gold-500/40 px-3.5 py-1.5 text-xs font-medium text-gold-400 transition hover:bg-gold-500/10 disabled:cursor-default disabled:border-navy-700 disabled:text-ivory/40 disabled:hover:bg-transparent"
+                      >
+                        {inCart ? t("templates.inCart") : justAdded ? t("templates.added") : t("templates.addToCart")}
+                      </button>
+                    </div>
+
+                    <Link
+                      to={detailsPath}
+                      className="mt-3 flex w-full items-center justify-center rounded-full border border-navy-700 px-4 py-2 text-sm font-medium text-ivory/80 transition-colors hover:border-gold-500 hover:text-gold-400"
                     >
-                      {inCart ? t("templates.inCart") : justAdded ? t("templates.added") : t("templates.addToCart")}
-                    </button>
+                      {t("templates.viewDetails", "View Details")}
+                    </Link>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={(e) => handleViewDetails(e, template)}
-                    className="mt-3 flex w-full items-center justify-center rounded-full border border-navy-700 px-4 py-2 text-sm font-medium text-ivory/80 transition-colors hover:border-gold-500 hover:text-gold-400"
-                  >
-                    {t("templates.viewDetails", "View Details")}
-                  </button>
                 </div>
-              </Link>
+              </article>
             );
           })}
         </div>
@@ -129,7 +163,7 @@ export default function TemplateShowcase() {
             className="inline-flex items-center gap-1.5 rounded-full border border-gold-500/40 px-5 py-2.5 text-sm font-medium text-gold-400 transition hover:bg-gold-500/10"
           >
             {t("templates.seeAll")}
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" className="h-4 w-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
             </svg>
           </Link>
