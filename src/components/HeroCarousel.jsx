@@ -33,58 +33,56 @@ const SLIDE_META = [
   },
 ];
 
-// Slightly longer than before so people can finish reading each slide.
+// Long enough to finish reading a slide.
 const AUTO_ADVANCE_MS = 8000;
 
 const FOCUS_RING =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400";
 
-// Arrows + dots. "overlay" sits on top of the mobile photo; "inline" is the
-// desktop version below the text, using the site's theme colors.
+// Just the dots. Used on its own under the mobile banner, and inside the
+// desktop controls.
+function Dots({ index, count, onGo }) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center">
+      {Array.from({ length: count }, (_, i) => (
+        <button
+          key={i}
+          onClick={() => onGo(i)}
+          aria-label={t("heroCarousel.goToSlide", { number: i + 1 })}
+          aria-current={i === index}
+          // Padding makes the tap target ~24px tall while the dot stays 8px
+          className={`group rounded-full px-1 py-2 ${FOCUS_RING}`}
+        >
+          <span
+            className={`block h-2 rounded-full transition-all ${
+              i === index ? "w-6 bg-gold-500" : "w-2 bg-ivory/30 group-hover:bg-ivory/50"
+            }`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// Arrows + dots for desktop, shown below the text.
 // (backdrop-blur removed: it re-blurs every frame during the crossfade and
 // is a common cause of stutter on phones and older laptops.)
-function Controls({ index, count, onPrev, onNext, onGo, variant }) {
+function Controls({ index, count, onPrev, onNext, onGo }) {
   const { t } = useTranslation();
-  const overlay = variant === "overlay";
-
-  const arrowClass = overlay
-    ? "rounded-full p-2 text-white/90 hover:text-white"
-    : "rounded-full border border-ivory/30 bg-ink/80 p-2 text-ivory/70 hover:border-gold-500 hover:text-gold-400";
-  const dotOn = overlay ? "w-6 bg-white" : "w-6 bg-gold-500";
-  const dotOff = overlay ? "w-2 bg-white/50" : "w-2 bg-ivory/30 group-hover:bg-ivory/50";
+  const arrow = `rounded-full border border-ivory/30 bg-ink/80 p-2 text-ivory/70 hover:border-gold-500 hover:text-gold-400 ${FOCUS_RING}`;
 
   return (
-    <div
-      className={
-        overlay
-          ? "flex items-center gap-1 rounded-full bg-black/55 px-1.5 text-white"
-          : "flex items-center gap-4"
-      }
-    >
-      <button onClick={onPrev} aria-label={t("heroCarousel.prevSlide")} className={`${arrowClass} ${FOCUS_RING}`}>
+    <div className="flex items-center gap-4">
+      <button onClick={onPrev} aria-label={t("heroCarousel.prevSlide")} className={arrow}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
       </button>
 
-      <div className="flex items-center">
-        {Array.from({ length: count }, (_, i) => (
-          <button
-            key={i}
-            onClick={() => onGo(i)}
-            aria-label={t("heroCarousel.goToSlide", { number: i + 1 })}
-            aria-current={i === index}
-            // Padding makes the tap target ~24px tall while the dot stays 8px
-            className={`group rounded-full px-1 py-2 ${FOCUS_RING}`}
-          >
-            <span
-              className={`block h-2 rounded-full transition-all ${i === index ? dotOn : dotOff}`}
-            />
-          </button>
-        ))}
-      </div>
+      <Dots index={index} count={count} onGo={onGo} />
 
-      <button onClick={onNext} aria-label={t("heroCarousel.nextSlide")} className={`${arrowClass} ${FOCUS_RING}`}>
+      <button onClick={onNext} aria-label={t("heroCarousel.nextSlide")} className={arrow}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
         </svg>
@@ -93,10 +91,13 @@ function Controls({ index, count, onPrev, onNext, onGo, variant }) {
   );
 }
 
-// Renders the photo in full, uncropped, contained entirely within the box.
 // The first slide loads eagerly with high priority (it's the page's LCP
 // image); the others are lazy so they don't compete for bandwidth.
-function SlideImage({ src, first }) {
+function SlideImage({
+  src,
+  first,
+  className = "absolute inset-0 h-full w-full object-contain object-center bg-ink",
+}) {
   return (
     <img
       src={src}
@@ -104,7 +105,7 @@ function SlideImage({ src, first }) {
       decoding="async"
       loading={first ? "eager" : "lazy"}
       fetchpriority={first ? "high" : "auto"}
-      className="absolute inset-0 h-full w-full object-contain object-center bg-ink"
+      className={className}
     />
   );
 }
@@ -116,6 +117,7 @@ export default function HeroCarousel() {
   const timerRef = useRef(null);
   // Counts automatic advances so each slide is shown once, then autoplay stops.
   const ticksRef = useRef(0);
+  const touchX = useRef(null);
 
   // Build the full slide objects (translated text + static meta) on each
   // render so a language change immediately updates the copy.
@@ -152,9 +154,23 @@ export default function HeroCarousel() {
     return () => clearInterval(timerRef.current);
   }, [advance, index, paused]);
 
+  // Used for every manual action (arrows, dots, swipes). Once the visitor
+  // takes control, autoplay stops for good.
   const goTo = (i) => {
+    ticksRef.current = SLIDE_META.length - 1;
     const nextIndex = ((i % SLIDE_META.length) + SLIDE_META.length) % SLIDE_META.length;
     setIndex(nextIndex);
+  };
+
+  const onTouchStart = (e) => {
+    touchX.current = e.touches[0].clientX;
+  };
+  const onTouchEnd = (e) => {
+    if (touchX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchX.current;
+    touchX.current = null;
+    // Ignore small movements so taps on the button still work.
+    if (Math.abs(dx) > 40) goTo(index + (dx < 0 ? 1 : -1));
   };
 
   const controlProps = {
@@ -169,13 +185,65 @@ export default function HeroCarousel() {
     // Pause autoplay while the pointer is over the hero or keyboard focus is
     // inside it (also an accessibility requirement for auto-moving content).
     <section
-      className="relative min-h-[560px] overflow-hidden border-b border-navy-700/60 bg-ink"
+      className="relative overflow-hidden border-b border-navy-700/60 bg-ink md:min-h-[560px]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
     >
-      {/* Full-bleed background image: desktop/tablet only (md and up). */}
+      {/* ───────────── MOBILE: compact banner card + dots ─────────────
+          Text and one button on the left, picture on the right, dots below
+          the card. Swipe left/right to change slides. Colors come from the
+          theme tokens, so it follows light and dark mode. */}
+      <div className="px-4 pb-2 pt-4 md:hidden" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        <div className="relative overflow-hidden rounded-3xl border border-navy-700/60 bg-gradient-to-br from-gold-500/20 via-navy-900 to-navy-900">
+          {/* All slides share ONE grid cell, so the card is always as tall
+              as the tallest slide and nothing below it moves. */}
+          <div className="grid">
+            {SLIDES.map((s, i) => {
+              const isActive = i === index;
+              const Heading = i === 0 ? "h1" : "h2";
+
+              return (
+                <div
+                  key={s.key}
+                  className={`col-start-1 row-start-1 grid grid-cols-[1.15fr,1fr] items-center gap-2 p-5 transition-[opacity,visibility] duration-500 motion-reduce:transition-none ${
+                    isActive ? "visible opacity-100" : "invisible opacity-0"
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <Heading className="font-sans text-2xl font-bold leading-[1.1] tracking-[-0.03em] text-ivory [text-wrap:balance]">
+                      {s.title} {s.highlight}
+                    </Heading>
+                    <p className="mt-2 line-clamp-2 text-sm leading-snug text-ivory/70">{s.body}</p>
+                    <InfoLink
+                      to={s.primaryCta.to}
+                      className={`mt-4 inline-block rounded-full bg-gold-500 px-5 py-2.5 text-sm font-semibold text-ink shadow-md shadow-gold-500/20 transition hover:bg-gold-400 active:scale-[0.98] ${FOCUS_RING}`}
+                    >
+                      {s.primaryCta.label}
+                    </InfoLink>
+                  </div>
+
+                  <div className="relative h-36 sm:h-44">
+                    <SlideImage
+                      src={s.image}
+                      first={i === 0}
+                      className="absolute inset-0 h-full w-full rounded-2xl object-cover object-center"
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-1 flex justify-center">
+          <Dots index={index} count={SLIDES.length} onGo={goTo} />
+        </div>
+      </div>
+
+      {/* ───────────── DESKTOP / TABLET (md and up) ───────────── */}
+      {/* Full-bleed background image. */}
       <div className="absolute inset-0 hidden md:block">
         {SLIDES.map((s, i) => (
           <div
@@ -189,28 +257,11 @@ export default function HeroCarousel() {
         ))}
         {/* Scrim is near-opaque under the text column so lettering baked into
             the photos can't show through the headline. */}
-        <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/90 to-ink/20 pointer-events-none" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink via-ink/90 to-ink/20" />
       </div>
 
-      <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-6 pb-12 pt-6 md:min-h-[560px] md:grid-cols-[1.2fr,1fr] md:py-20">
+      <div className="relative mx-auto hidden max-w-6xl items-center gap-10 px-6 md:grid md:min-h-[560px] md:grid-cols-[1.2fr,1fr] md:py-20">
         <div>
-          {/* MOBILE: photo first, with the arrows and dots overlaid on it. */}
-          <div className="relative mb-6 h-56 overflow-hidden rounded-2xl shadow-lg ring-1 ring-black/5 sm:h-72 md:hidden">
-            {SLIDES.map((s, i) => (
-              <div
-                key={s.image}
-                className={`absolute inset-0 transition-opacity duration-700 motion-reduce:transition-none ${
-                  i === index ? "opacity-100" : "opacity-0"
-                }`}
-              >
-                <SlideImage src={s.image} first={i === 0} />
-              </div>
-            ))}
-            <div className="absolute inset-x-0 bottom-3 flex justify-center">
-              <Controls {...controlProps} variant="overlay" />
-            </div>
-          </div>
-
           {/* All slides share ONE grid cell, so this block is always as tall
               as the tallest slide and nothing below the carousel moves.
               Inactive slides are `invisible`, which also removes their links
@@ -218,7 +269,6 @@ export default function HeroCarousel() {
           <div className="grid">
             {SLIDES.map((s, i) => {
               const isActive = i === index;
-              // Only the first slide is the page's h1; the rest are h2s
               const Heading = i === 0 ? "h1" : "h2";
 
               return (
@@ -231,31 +281,28 @@ export default function HeroCarousel() {
                   }`}
                 >
                   {/* Eyebrow: rounded-3xl (not -full) so a wrapped two-line
-                      label on phones doesn't turn into a blob */}
+                      label doesn't turn into a blob */}
                   <p className="inline-flex max-w-full items-center gap-2 rounded-3xl border border-ivory/15 bg-ivory/5 px-3 py-1.5 text-xs font-medium text-ivory/80">
                     <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold-500" />
                     {s.eyebrow}
                   </p>
 
-                  <Heading className="mt-4 font-sans text-4xl font-bold leading-[1.05] tracking-[-0.035em] text-ivory [text-wrap:balance] sm:text-5xl md:mt-5 md:text-6xl">
+                  <Heading className="mt-5 font-sans text-6xl font-bold leading-[1.05] tracking-[-0.035em] text-ivory [text-wrap:balance]">
                     {s.title} {s.highlight}
                   </Heading>
 
-                  <p className="mt-4 max-w-[34rem] text-base leading-relaxed text-ivory/75 md:mt-6 md:text-lg">
-                    {s.body}
-                  </p>
+                  <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-ivory/75">{s.body}</p>
 
-                  {/* Full-width stacked buttons on phones, inline from sm up */}
-                  <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center md:mt-8">
+                  <div className="mt-8 flex flex-wrap items-center gap-3">
                     <InfoLink
                       to={s.primaryCta.to}
-                      className={`w-full rounded-full bg-gold-500 px-6 py-3 text-center text-sm font-semibold text-ink shadow-lg shadow-gold-500/20 transition hover:bg-gold-400 active:scale-[0.98] sm:w-auto ${FOCUS_RING}`}
+                      className={`rounded-full bg-gold-500 px-6 py-3 text-center text-sm font-semibold text-ink shadow-lg shadow-gold-500/20 transition hover:bg-gold-400 active:scale-[0.98] ${FOCUS_RING}`}
                     >
                       {s.primaryCta.label}
                     </InfoLink>
                     <InfoLink
                       to={s.secondaryCta.to}
-                      className={`w-full rounded-full border border-ivory/25 px-6 py-3 text-center text-sm font-semibold text-ivory/90 transition hover:border-gold-500 hover:text-gold-400 active:scale-[0.98] sm:w-auto ${FOCUS_RING}`}
+                      className={`rounded-full border border-ivory/25 px-6 py-3 text-center text-sm font-semibold text-ivory/90 transition hover:border-gold-500 hover:text-gold-400 active:scale-[0.98] ${FOCUS_RING}`}
                     >
                       {s.secondaryCta.label}
                     </InfoLink>
@@ -267,9 +314,8 @@ export default function HeroCarousel() {
             })}
           </div>
 
-          {/* DESKTOP: arrows + dots below the text */}
-          <div className="mt-10 hidden md:block">
-            <Controls {...controlProps} variant="inline" />
+          <div className="mt-10">
+            <Controls {...controlProps} />
           </div>
         </div>
       </div>
