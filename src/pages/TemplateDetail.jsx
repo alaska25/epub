@@ -5,7 +5,10 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuthModal } from "../context/AuthModalContext.jsx";
 import { flyToCart } from "../utils/flyToCart.js";
+import { pushToast } from "../utils/toastStore.js";
 import Seo from "../components/Seo.jsx";
+
+const SITE = "https://www.adyoolau.com";
 
 export default function TemplateDetail() {
   const { id } = useParams();
@@ -91,6 +94,30 @@ export default function TemplateDetail() {
     }
   };
 
+  // Uses the phone's share sheet when available, otherwise copies the link.
+  // The link is tagged so visits from shares show up in your analytics.
+  const handleShare = async () => {
+    const url = `${SITE}/template/${template._id}?utm_source=share&utm_medium=button`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: template.title,
+          text: template.tagline || template.title,
+          url,
+        });
+      } catch {
+        /* the person closed the share sheet */
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      pushToast({ type: "success", message: "Link copied" });
+    } catch {
+      pushToast({ type: "error", message: "Could not copy the link" });
+    }
+  };
+
   return (
     <div className="mx-auto max-w-5xl px-6 py-12">
       <Seo
@@ -110,7 +137,7 @@ export default function TemplateDetail() {
             price: template.isFree ? 0 : price,
             priceCurrency: "USD",
             availability: "https://schema.org/InStock",
-            url: `https://adyoolau.com/template/${template._id}`,
+            url: `${SITE}/template/${template._id}`,
           },
         }}
       />
@@ -194,6 +221,18 @@ export default function TemplateDetail() {
                 View live demo ↗
               </a>
             )}
+
+            <button
+              type="button"
+              onClick={handleShare}
+              className="inline-flex items-center gap-2 rounded-full border border-navy-700 px-5 py-3 text-sm font-medium text-ivory/80 transition-colors hover:border-gold-500/60 hover:text-gold-400"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" className="h-4 w-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 6l-4-4-4 4M12 2v13" />
+              </svg>
+              Share
+            </button>
           </div>
 
           {!template.isFree && (
