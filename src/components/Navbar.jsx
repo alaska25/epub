@@ -19,6 +19,7 @@ const LANGUAGES = [
 const icons = {
   search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></>,
   cart: <><circle cx="9" cy="20" r="1.2" /><circle cx="18" cy="20" r="1.2" /><path d="M2 3h3l2.4 11.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.5L21 7H6" /></>,
+  user: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
   moon: <path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z" />,
   sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>,
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
@@ -164,9 +165,13 @@ export default function Navbar() {
     openLogin();
   };
 
-  const searchForm = (ref) => (
+  // withButton = the mobile style: always visible under the header, with a
+  // gold search button on the right (instead of the icon inside the field).
+  const searchForm = (ref, withButton = false) => (
     <form onSubmit={handleSearch} role="search" className="group relative">
-      <Icon name="search" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ivory/40" />
+      {!withButton && (
+        <Icon name="search" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ivory/40" />
+      )}
       <input
         ref={ref}
         type="search"
@@ -174,9 +179,21 @@ export default function Navbar() {
         onChange={(e) => setQuery(e.target.value)}
         placeholder={t("nav.searchPlaceholder")}
         aria-label={t("nav.searchPlaceholder")}
-        className="h-10 w-full rounded-full border border-navy-700 bg-navy-900 pl-10 pr-10 text-sm text-ivory outline-none transition placeholder:text-ivory/40 focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10"
+        className={`w-full rounded-full border border-navy-700 bg-navy-900 text-sm text-ivory outline-none transition placeholder:text-ivory/40 focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10 ${
+          withButton ? "h-11 pl-4 pr-14" : "h-10 pl-10 pr-10"
+        }`}
       />
-      <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded border border-navy-700 px-1.5 text-[11px] text-ivory/40 group-focus-within:hidden lg:block">/</kbd>
+      {withButton ? (
+        <button
+          type="submit"
+          aria-label={t("nav.search", "Search")}
+          className={`absolute right-1 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-gold-500 text-ink transition hover:bg-gold-400 ${ring}`}
+        >
+          <Icon name="search" className="h-4 w-4" />
+        </button>
+      ) : (
+        <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded border border-navy-700 px-1.5 text-[11px] text-ivory/40 group-focus-within:hidden lg:block">/</kbd>
+      )}
     </form>
   );
 
@@ -185,7 +202,7 @@ export default function Navbar() {
       ref={headerRef}
       className={`sticky top-0 z-40 border-b border-navy-700/60 bg-ink/80 backdrop-blur-xl transition-shadow ${scrolled ? "shadow-lg shadow-black/10" : ""}`}
     >
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-6 lg:gap-6">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:gap-4 sm:px-6 lg:gap-6">
         {/* Brand */}
         <Link to="/" className={`flex shrink-0 items-center gap-3 rounded-full pr-2 ${ring}`}>
           <img src={logo} alt="Adyoolau" className="h-10 w-10 rounded-full" />
@@ -251,6 +268,22 @@ export default function Navbar() {
           <button type="button" onClick={toggleTheme} aria-label={themeLabel} className={`${iconBtn} hidden md:grid`}>
             <Icon name={dark ? "sun" : "moon"} />
           </button>
+
+          {/* Account shortcut (mobile): avatar when signed in, sign-in icon
+              when not. Admins have no account page, so they don't get it. */}
+          {!isAdmin && (
+            <div className="md:hidden">
+              {user ? (
+                <Link to="/account" aria-label={accountLabel} title={user.name || accountLabel} className={iconBtn}>
+                  <Avatar user={user} size={30} />
+                </Link>
+              ) : (
+                <button type="button" onClick={handleSignIn} aria-label={t("nav.signIn")} className={iconBtn}>
+                  <Icon name="user" />
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Cart: one link for every screen size, so [data-cart-target] is always visible */}
           {!isAdmin && (
@@ -329,15 +362,20 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile panel — a scrollable sheet of distinct, bordered sections
-          instead of a flat list, so related controls read as one group. */}
+      {/* Mobile search: always visible under the header (not hidden inside
+          the menu), so shoppers can search from any page in one tap. */}
+      {!isAdmin && <div className="px-4 pb-3 md:hidden">{searchForm(undefined, true)}</div>}
+
+      {/* Mobile panel: a scrollable sheet of distinct, bordered sections
+          instead of a flat list, so related controls read as one group.
+          The max height leaves room for the header (and the search row). */}
       {menuOpen && (
         <div
           id="mobile-menu"
-          className="flex max-h-[calc(100dvh-4rem)] flex-col gap-3 overflow-y-auto border-t border-navy-700/60 bg-ink px-4 pb-6 pt-4 md:hidden"
+          className={`flex flex-col gap-3 overflow-y-auto border-t border-navy-700/60 bg-ink px-4 pb-6 pt-4 md:hidden ${
+            isAdmin ? "max-h-[calc(100dvh-4rem)]" : "max-h-[calc(100dvh-7.5rem)]"
+          }`}
         >
-          {!isAdmin && searchForm()}
-
           <nav aria-label="Mobile" className={mSection}>
             {links.map((l) => (
               <NavLink
