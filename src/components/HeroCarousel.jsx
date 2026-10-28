@@ -215,20 +215,20 @@ export default function HeroCarousel() {
                     <Heading className="font-sans text-xl font-bold leading-[1.1] tracking-[-0.03em] text-ivory [text-wrap:balance] sm:text-2xl">
                       {s.title} {s.highlight}
                     </Heading>
-                    <p className="mt-2 line-clamp-2 text-sm leading-snug text-ivory/70">{s.body}</p>
+                    <p className="mt-2 line-clamp-3 text-[13px] leading-snug text-ivory/70 sm:text-sm">{s.body}</p>
                     <InfoLink
                       to={s.primaryCta.to}
-                      className={`mt-4 inline-block rounded-full bg-gold-500 px-5 py-2.5 text-sm font-semibold text-ink shadow-md shadow-gold-500/20 transition hover:bg-gold-400 active:scale-[0.98] ${FOCUS_RING}`}
+                      className={`mt-3 block w-full rounded-full bg-gold-500 px-3 py-2.5 text-center text-[13px] font-semibold leading-tight text-ink shadow-md shadow-gold-500/20 transition hover:bg-gold-400 active:scale-[0.98] sm:inline-block sm:w-auto sm:px-5 sm:text-sm ${FOCUS_RING}`}
                     >
                       {s.primaryCta.label}
                     </InfoLink>
                   </div>
 
-                  <div className="relative h-32 sm:h-44">
+                  <div className="relative flex h-32 items-center justify-center sm:h-44">
                     <SlideImage
                       src={s.image}
                       first={i === 0}
-                      className="absolute inset-0 h-full w-full rounded-2xl object-cover object-center"
+                      className="max-h-full max-w-full rounded-2xl object-contain shadow-md"
                     />
                   </div>
                 </div>
