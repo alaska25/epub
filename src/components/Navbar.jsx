@@ -57,6 +57,11 @@ const mSection = "rounded-2xl border border-navy-700/60 bg-navy-900/40 p-1.5";
 const mSectionLabel = "px-2.5 pb-1.5 pt-2 text-[11px] font-semibold uppercase tracking-wider text-ivory/40";
 const mNavLink = `flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium transition ${ring}`;
 
+// Pages where the mobile header never hides while scrolling. A path matches
+// itself and anything beneath it, e.g. "/checkout" also covers "/checkout/success".
+// To pin more pages, just add their paths here.
+const ALWAYS_VISIBLE_ROUTES = ["/cart", "/checkout"];
+
 export default function Navbar() {
   const { t, i18n } = useTranslation();
   const { user, logout, isAdmin } = useAuth();
@@ -67,10 +72,13 @@ export default function Navbar() {
   const [menu, setMenu] = useState(null); // null | "lang" | "user"
   const [menuOpen, setMenuOpen] = useState(false); // mobile panel
   const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false); // mobile: slide the bar away while scrolling down
+  const lastY = useRef(0);
   const headerRef = useRef(null);
   const searchRef = useRef(null);
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const pinned = ALWAYS_VISIBLE_ROUTES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   const isActiveLang = (code) => i18n.language === code || i18n.language?.startsWith(code);
   const currentLang =
@@ -93,11 +101,31 @@ export default function Navbar() {
   const accountItems = isAdmin ? [] : [{ to: "/account", label: accountLabel }];
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 4);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 4);
+
+      const delta = y - lastY.current;
+      lastY.current = y;
+
+      // Always show the bar near the top of the page, on pinned pages (cart,
+      // checkout), while the mobile menu is open, or while the visitor is
+      // typing in the search box (the on-screen keyboard can trigger scrolls).
+      const active = document.activeElement;
+      const typing = active?.tagName === "INPUT" && headerRef.current?.contains(active);
+      if (y < 80 || menuOpen || typing || pinned) {
+        setHidden(false);
+        return;
+      }
+
+      // Small movements are ignored so the bar doesn't flicker.
+      if (delta > 8) setHidden(true); // scrolling down: hide
+      else if (delta < -8) setHidden(false); // scrolling up: show
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [menuOpen, pinned]);
 
   useEffect(() => {
     const onDown = (e) => {
@@ -129,6 +157,7 @@ export default function Navbar() {
   useEffect(() => {
     setMenu(null);
     setMenuOpen(false);
+    setHidden(false);
   }, [pathname]);
 
   // Lock page scroll while the mobile panel is open, so the panel itself
@@ -200,13 +229,14 @@ export default function Navbar() {
   return (
     <header
       ref={headerRef}
-      className={`sticky top-0 z-40 border-b border-navy-700/60 bg-ink/80 backdrop-blur-xl transition-shadow ${scrolled ? "shadow-lg shadow-black/10" : ""}`}
+      onFocusCapture={() => setHidden(false)}
+      className={`sticky top-0 z-40 border-b border-navy-700/60 bg-ink/80 backdrop-blur-xl transition-[transform,box-shadow] duration-300 motion-reduce:transition-none ${hidden ? "-translate-y-full" : "translate-y-0"} md:translate-y-0 ${scrolled ? "shadow-lg shadow-black/10" : ""}`}
     >
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:gap-4 sm:px-6 lg:gap-6">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-6 sm:gap-4 lg:gap-6">
         {/* Brand */}
         <Link to="/" className={`flex shrink-0 items-center gap-3 rounded-full pr-2 ${ring}`}>
           <img src={logo} alt="Adyoolau" className="h-10 w-10 rounded-full" />
-          <span className="font-display text-xl tracking-wide text-ivory">Adyoolau</span>
+          <span className="font-display text-lg tracking-wide text-ivory sm:text-xl">Adyoolau</span>
         </Link>
 
         {/* Desktop links */}
@@ -364,7 +394,7 @@ export default function Navbar() {
 
       {/* Mobile search: always visible under the header (not hidden inside
           the menu), so shoppers can search from any page in one tap. */}
-      {!isAdmin && <div className="px-4 pb-3 md:hidden">{searchForm(undefined, true)}</div>}
+      {!isAdmin && <div className="px-6 pb-3 md:hidden">{searchForm(undefined, true)}</div>}
 
       {/* Mobile panel: a scrollable sheet of distinct, bordered sections
           instead of a flat list, so related controls read as one group.
@@ -372,7 +402,7 @@ export default function Navbar() {
       {menuOpen && (
         <div
           id="mobile-menu"
-          className={`flex flex-col gap-3 overflow-y-auto border-t border-navy-700/60 bg-ink px-4 pb-6 pt-4 md:hidden ${
+          className={`flex flex-col gap-3 overflow-y-auto border-t border-navy-700/60 bg-ink px-6 pb-6 pt-4 md:hidden ${
             isAdmin ? "max-h-[calc(100dvh-4rem)]" : "max-h-[calc(100dvh-7.5rem)]"
           }`}
         >
