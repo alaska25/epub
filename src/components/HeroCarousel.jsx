@@ -3,9 +3,9 @@ import { useTranslation } from "react-i18next";
 import { InfoLink } from "./InfoModal.jsx";
 // TIP: convert these to .webp (see scripts/compress-images.mjs) and change
 // the extensions below, e.g. "./images/29342.webp".
-import image31235 from "./images/31235.png";
-import image29236 from "./images/29236.jpg";
 import image29204 from "./images/29204.jpg";
+import image29236 from "./images/29236.jpg";
+import image28821 from "./images/28821.png";
 
 // Slide copy comes from translation keys (heroCarousel.slide1/2/3.*);
 // only the images and link targets stay hardcoded here.
@@ -14,7 +14,7 @@ const SLIDE_META = [
     key: "slide1",
     primaryTo: "/catalog",
     secondaryTo: "/catalog?search=free",
-    image: image31235,
+    image: image29204,
     hasNote: false,
   },
   {
@@ -28,7 +28,7 @@ const SLIDE_META = [
     key: "slide3",
     primaryTo: "/catalog?search=free",
     secondaryTo: "/about",
-    image: image29204,
+    image: image28821,
     hasNote: true,
   },
 ];
