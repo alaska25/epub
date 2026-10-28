@@ -195,7 +195,7 @@ export default function HeroCarousel() {
           Text and one button on the left, picture on the right, dots below
           the card. Swipe left/right to change slides. Colors come from the
           theme tokens, so it follows light and dark mode. */}
-      <div className="px-4 pb-2 pt-4 md:hidden" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <div className="px-6 pb-3 pt-1 md:hidden" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div className="relative overflow-hidden rounded-3xl border border-navy-700/60 bg-gradient-to-br from-gold-500/20 via-navy-900 to-navy-900">
           {/* All slides share ONE grid cell, so the card is always as tall
               as the tallest slide and nothing below it moves. */}
@@ -207,12 +207,12 @@ export default function HeroCarousel() {
               return (
                 <div
                   key={s.key}
-                  className={`col-start-1 row-start-1 grid grid-cols-[1.15fr,1fr] items-center gap-2 p-5 transition-[opacity,visibility] duration-500 motion-reduce:transition-none ${
+                  className={`col-start-1 row-start-1 grid grid-cols-[1.15fr,1fr] items-center gap-3 p-4 transition-[opacity,visibility] duration-500 motion-reduce:transition-none ${
                     isActive ? "visible opacity-100" : "invisible opacity-0"
                   }`}
                 >
                   <div className="min-w-0">
-                    <Heading className="font-sans text-2xl font-bold leading-[1.1] tracking-[-0.03em] text-ivory [text-wrap:balance]">
+                    <Heading className="font-sans text-xl font-bold leading-[1.1] tracking-[-0.03em] text-ivory [text-wrap:balance] sm:text-2xl">
                       {s.title} {s.highlight}
                     </Heading>
                     <p className="mt-2 line-clamp-2 text-sm leading-snug text-ivory/70">{s.body}</p>
@@ -224,7 +224,7 @@ export default function HeroCarousel() {
                     </InfoLink>
                   </div>
 
-                  <div className="relative h-36 sm:h-44">
+                  <div className="relative h-32 sm:h-44">
                     <SlideImage
                       src={s.image}
                       first={i === 0}
