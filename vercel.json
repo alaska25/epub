@@ -1,5 +1,7 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/book/:id", "destination": "/api/share-page?kind=book&id=:id" },
+    { "source": "/template/:id", "destination": "/api/share-page?kind=template&id=:id" },
+    { "source": "/((?!api/|sitemap\\.xml|robots\\.txt|assets/).*)", "destination": "/index.html" }
+  ]
 }

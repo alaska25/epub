@@ -8,14 +8,15 @@ import AuthModal from "./components/AuthModal.jsx";
 import ToastContainer from "./components/ToastContainer.jsx";
 import ChatWidget from "./components/ChatWidget.jsx";
 
-// Home loads eagerly — it's the first thing almost every visitor sees, so
-// there's no point showing a loading flicker just to then immediately
-// render it. Everything else loads on demand, so a homepage visitor never
-// has to download the admin dashboard, reader, or checkout code.
+// Pages visitors land on first (including from shared social links) load
+// eagerly, so there's no "Loading…" flash after the page opens. Heavy or
+// rarely-visited pages stay lazy so they don't slow down the first load.
 import Home from "./pages/Home.jsx";
+import Catalog from "./pages/Catalog.jsx";
+import BookDetail from "./pages/BookDetail.jsx";
+import Templates from "./pages/Templates.jsx";
+import TemplateDetail from "./pages/TemplateDetail.jsx";
 
-const Catalog = lazy(() => import("./pages/Catalog.jsx"));
-const BookDetail = lazy(() => import("./pages/BookDetail.jsx"));
 const Login = lazy(() => import("./pages/Login.jsx"));
 const Register = lazy(() => import("./pages/Register.jsx"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword.jsx"));
@@ -23,22 +24,18 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword.jsx"));
 const Cart = lazy(() => import("./pages/Cart.jsx"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess.jsx"));
 const MyLibrary = lazy(() => import("./pages/MyLibrary.jsx"));
-const Reader = lazy(() => import("./pages/Reader.jsx"));
+const Reader = lazy(() => import("./pages/Reader.jsx")); // pulls in epubjs / react-pdf
 const SampleReader = lazy(() => import("./pages/SampleReader.jsx"));
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard.jsx"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard.jsx")); // pulls in recharts
 const About = lazy(() => import("./pages/About.jsx"));
 const Contact = lazy(() => import("./pages/Contact.jsx"));
 const RefundPolicy = lazy(() => import("./pages/RefundPolicy.jsx"));
 const Terms = lazy(() => import("./pages/Terms.jsx"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy.jsx"));
-const Templates = lazy(() => import("./pages/Templates.jsx"));
-const TemplateDetail = lazy(() => import("./pages/TemplateDetail.jsx"));
 const Account = lazy(() => import("./pages/Account.jsx"));
 const Receipt = lazy(() => import("./pages/Receipt.jsx"));
 
-// Simple, unobtrusive fallback shown only while a lazy chunk is fetching —
-// normally invisible on a fast connection since chunks are small and cached
-// after first visit.
+// Shown only while a lazy chunk is fetching.
 function RouteFallback() {
   return (
     <div className="flex min-h-[50vh] items-center justify-center">
