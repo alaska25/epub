@@ -10,27 +10,9 @@ import image28821 from "./images/28821.png";
 // Slide copy comes from translation keys (heroCarousel.slide1/2/3.*);
 // only the images and link targets stay hardcoded here.
 const SLIDE_META = [
-  {
-    key: "slide1",
-    primaryTo: "/catalog",
-    secondaryTo: "/catalog?search=free",
-    image: image29204,
-    hasNote: false,
-  },
-  {
-    key: "slide2",
-    primaryTo: "/catalog",
-    secondaryTo: "/refund-policy",
-    image: image29236,
-    hasNote: false,
-  },
-  {
-    key: "slide3",
-    primaryTo: "/catalog?search=free",
-    secondaryTo: "/about",
-    image: image28821,
-    hasNote: true,
-  },
+  { key: "slide1", primaryTo: "/catalog", secondaryTo: "/catalog?search=free", image: image29204, hasNote: false },
+  { key: "slide2", primaryTo: "/catalog", secondaryTo: "/refund-policy", image: image29236, hasNote: false },
+  { key: "slide3", primaryTo: "/catalog?search=free", secondaryTo: "/about", image: image28821, hasNote: true },
 ];
 
 // Long enough to finish reading a slide.
@@ -47,9 +29,9 @@ const TRUST_KEYS = [
   { key: "trust3", fallback: "Money-back guarantee" },
 ];
 
-function CheckIcon() {
+function CheckIcon({ className = "h-4 w-4 shrink-0 text-gold-400" }) {
   return (
-    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" className="h-4 w-4 shrink-0 text-gold-400">
+    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" className={className}>
       <path
         fillRule="evenodd"
         d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 111.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z"
@@ -61,14 +43,21 @@ function CheckIcon() {
 
 function ArrowIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true" className="h-4 w-4 transition-transform group-hover/cta:translate-x-0.5">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      aria-hidden="true"
+      className="h-4 w-4 transition-transform duration-300 group-hover/cta:translate-x-1"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 6l6 6-6 6" />
     </svg>
   );
 }
 
-// Just the dots. Used on its own under the mobile banner, and inside the
-// desktop controls. The active dot is a pill that fills while autoplay runs.
+// Dots: used under the mobile banner. The active dot is a pill that fills
+// while autoplay runs.
 function Dots({ index, count, onGo, progress }) {
   const { t } = useTranslation();
   return (
@@ -81,7 +70,6 @@ function Dots({ index, count, onGo, progress }) {
             onClick={() => onGo(i)}
             aria-label={t("heroCarousel.goToSlide", { number: i + 1 })}
             aria-current={active}
-            // Padding makes the tap target ~24px tall while the dot stays 6px
             className={`group rounded-full px-1 py-2.5 ${FOCUS_RING}`}
           >
             <span
@@ -105,43 +93,66 @@ function Dots({ index, count, onGo, progress }) {
   );
 }
 
-// Arrows + dots for desktop, shown below the text.
-// (backdrop-blur removed: it re-blurs every frame during the crossfade and
-// is a common cause of stutter on phones and older laptops.)
-function Controls({ index, count, onPrev, onNext, onGo, progress }) {
+// Desktop navigation: one labelled segment per slide (the label is the slide's
+// own eyebrow), with the active segment filling as autoplay counts down.
+function SlideTabs({ slides, index, onGo, onPrev, onNext, progress }) {
   const { t } = useTranslation();
-  const arrow = `rounded-full border border-ivory/20 bg-ivory/5 p-2.5 text-ivory/70 transition hover:border-gold-500 hover:bg-gold-500/10 hover:text-gold-400 ${FOCUS_RING}`;
+  const arrow = `grid h-11 w-11 place-items-center rounded-full border border-ivory/15 bg-ivory/[0.04] text-ivory/70 transition hover:border-gold-500/70 hover:bg-gold-500/10 hover:text-gold-300 active:scale-95 ${FOCUS_RING}`;
 
   return (
-    <div className="flex items-center gap-4">
-      <button onClick={onPrev} aria-label={t("heroCarousel.prevSlide")} className={arrow}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
+    <div className="flex items-end gap-6">
+      <div className="grid flex-1 grid-cols-3 gap-4">
+        {slides.map((s, i) => {
+          const active = i === index;
+          return (
+            <button
+              key={s.key}
+              onClick={() => onGo(i)}
+              aria-label={t("heroCarousel.goToSlide", { number: i + 1 })}
+              aria-current={active}
+              className={`group/tab text-left ${FOCUS_RING} rounded-sm`}
+            >
+              <span className="relative block h-[3px] overflow-hidden rounded-full bg-ivory/15">
+                {active && (
+                  <span
+                    key={progress ? `run-${index}` : `static-${index}`}
+                    className={`absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 ${
+                      progress ? "hero-progress" : "w-full"
+                    }`}
+                  />
+                )}
+              </span>
+              <span
+                className={`mt-3 block truncate text-[13px] font-medium transition-colors duration-300 ${
+                  active ? "text-ivory" : "text-ivory/65 group-hover/tab:text-ivory"
+                }`}
+              >
+                {s.eyebrow}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
-      <Dots index={index} count={count} onGo={onGo} progress={progress} />
-
-      <button onClick={onNext} aria-label={t("heroCarousel.nextSlide")} className={arrow}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-
-      <span className="ml-1 font-mono text-xs tabular-nums tracking-widest text-ivory/40" aria-hidden="true">
-        {String(index + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}
-      </span>
+      <div className="flex shrink-0 items-center gap-2 pb-0.5">
+        <button onClick={onPrev} aria-label={t("heroCarousel.prevSlide")} className={arrow}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <button onClick={onNext} aria-label={t("heroCarousel.nextSlide")} className={arrow}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }
 
 // The first slide loads eagerly with high priority (it's the page's LCP
 // image); the others are lazy so they don't compete for bandwidth.
-function SlideImage({
-  src,
-  first,
-  className = "absolute inset-0 h-full w-full object-contain object-center bg-ink",
-}) {
+function SlideImage({ src, first, className = "" }) {
   return (
     <img
       src={src}
@@ -151,6 +162,20 @@ function SlideImage({
       fetchpriority={first ? "high" : "auto"}
       className={className}
     />
+  );
+}
+
+// Glass chip used for floating trust badges on the picture stage.
+function Badge({ children, className = "" }) {
+  return (
+    <div
+      className={`flex items-center gap-2.5 rounded-2xl border border-ivory/20 bg-navy-900/80 px-4 py-3 text-sm font-medium text-ivory shadow-2xl shadow-black/40 ${className}`}
+    >
+      <span className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-b from-gold-400 to-gold-500 text-ink">
+        <CheckIcon className="h-3.5 w-3.5" />
+      </span>
+      {children}
+    </div>
   );
 }
 
@@ -164,6 +189,7 @@ export default function HeroCarousel() {
   // Counts automatic advances so each slide is shown once, then autoplay stops.
   const ticksRef = useRef(0);
   const touchX = useRef(null);
+  const stageRef = useRef(null);
 
   // Build the full slide objects (translated text + static meta) on each
   // render so a language change immediately updates the copy.
@@ -208,13 +234,12 @@ export default function HeroCarousel() {
     return () => clearInterval(timerRef.current);
   }, [advance, index, paused, stopped, reduceMotion]);
 
-  // Used for every manual action (arrows, dots, swipes). Once the visitor
-  // takes control, autoplay stops for good.
+  // Used for every manual action (arrows, dots, swipes, keys). Once the
+  // visitor takes control, autoplay stops for good.
   const goTo = (i) => {
     ticksRef.current = SLIDE_META.length - 1;
     setStopped(true);
-    const nextIndex = ((i % SLIDE_META.length) + SLIDE_META.length) % SLIDE_META.length;
-    setIndex(nextIndex);
+    setIndex(((i % SLIDE_META.length) + SLIDE_META.length) % SLIDE_META.length);
   };
 
   const onTouchStart = (e) => {
@@ -228,69 +253,110 @@ export default function HeroCarousel() {
     if (Math.abs(dx) > 40) goTo(index + (dx < 0 ? 1 : -1));
   };
 
+  const onKeyDown = (e) => {
+    if (e.key === "ArrowRight") goTo(index + 1);
+    else if (e.key === "ArrowLeft") goTo(index - 1);
+  };
+
+  // Pointer-driven tilt + light on the desktop picture stage. Only runs for
+  // mouse/pen, and never when the visitor prefers reduced motion.
+  const onStageMove = (e) => {
+    if (reduceMotion || e.pointerType === "touch") return;
+    const el = stageRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width;
+    const py = (e.clientY - r.top) / r.height;
+    el.style.setProperty("--rx", `${((0.5 - py) * 7).toFixed(2)}deg`);
+    el.style.setProperty("--ry", `${((px - 0.5) * 9).toFixed(2)}deg`);
+    el.style.setProperty("--mx", `${(px * 100).toFixed(1)}%`);
+    el.style.setProperty("--my", `${(py * 100).toFixed(1)}%`);
+  };
+  const onStageLeave = () => {
+    const el = stageRef.current;
+    if (!el) return;
+    ["--rx", "--ry", "--mx", "--my"].forEach((p) => el.style.removeProperty(p));
+  };
+
   // The progress fill only shows while autoplay is actually counting down.
   const showProgress = !stopped && !paused && !reduceMotion;
-
-  const controlProps = {
-    index,
-    count: SLIDES.length,
-    onPrev: () => goTo(index - 1),
-    onNext: () => goTo(index + 1),
-    onGo: goTo,
-    progress: showProgress,
-  };
 
   return (
     // Pause autoplay while the pointer is over the hero or keyboard focus is
     // inside it (also an accessibility requirement for auto-moving content).
     <section
-      className="relative isolate overflow-hidden border-b border-navy-700/60 bg-ink md:min-h-[640px]"
+      className="relative isolate overflow-hidden border-b border-gold-500/20 bg-ink md:min-h-[700px]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
+      onKeyDown={onKeyDown}
       onBlur={(e) => {
-        // Only unpause when focus leaves the hero entirely, not when it
-        // moves between elements inside it.
         if (!e.currentTarget.contains(e.relatedTarget)) setPaused(false);
       }}
     >
       <style>{`
         @keyframes hero-fill { from { width: 0%; } to { width: 100%; } }
         .hero-progress { animation: hero-fill ${AUTO_ADVANCE_MS}ms linear forwards; }
-        @keyframes hero-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        .hero-float { animation: hero-float 6s ease-in-out infinite; }
+
+        @keyframes hero-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .hero-float { animation: hero-float 7s ease-in-out infinite; }
+        .hero-float-b { animation: hero-float 8s ease-in-out -3s infinite; }
+
+        /* One orchestrated entrance each time a slide becomes active. */
+        @keyframes hero-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+        .hero-in > * { animation: hero-rise 800ms cubic-bezier(.2,.7,.2,1) both; }
+        .hero-in > *:nth-child(1) { animation-delay: 0ms; }
+        .hero-in > *:nth-child(2) { animation-delay: 90ms; }
+        .hero-in > *:nth-child(3) { animation-delay: 180ms; }
+        .hero-in > *:nth-child(4) { animation-delay: 270ms; }
+        .hero-in > *:nth-child(5) { animation-delay: 340ms; }
+
+        /* Slow zoom on the active picture */
+        @keyframes hero-zoom { from { transform: scale(1.06); } to { transform: scale(1); } }
+        .hero-zoom { animation: hero-zoom 1600ms cubic-bezier(.2,.7,.2,1) both; }
+
+        /* Light sweep across the primary button on hover */
+        .cta-sheen::after {
+          content: ""; position: absolute; inset: 0 auto 0 -60%; width: 40%;
+          background: linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent);
+          transform: skewX(-18deg) translateX(0); transition: transform 900ms ease;
+        }
+        .cta-sheen:hover::after { transform: skewX(-18deg) translateX(520%); }
+
+        /* Slow drifting glow behind the picture */
+        @keyframes hero-aurora { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(24px,-18px,0) scale(1.08); } }
+        .hero-aurora { animation: hero-aurora 14s ease-in-out infinite; }
+
         @media (prefers-reduced-motion: reduce) {
-          .hero-progress, .hero-float { animation: none; }
+          .hero-progress, .hero-float, .hero-float-b, .hero-aurora, .hero-zoom, .hero-in > * { animation: none; }
           .hero-progress { width: 100%; }
+          .cta-sheen::after { display: none; }
         }
       `}</style>
 
-      {/* ───────────── BACKGROUND (decorative) ─────────────
-          Layered glows + a faint grid, masked so it fades out at the edges.
-          Static (no blur filters) so it stays cheap to paint. */}
+      {/* ───────────── BACKGROUND (decorative) ───────────── */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -left-32 -top-40 h-[480px] w-[480px] rounded-full bg-gold-500/15 blur-3xl" />
-        <div className="absolute -bottom-48 right-0 h-[560px] w-[560px] rounded-full bg-navy-700/50 blur-3xl" />
+        <div className="hero-aurora absolute -left-40 -top-48 h-[560px] w-[560px] rounded-full bg-gold-500/20 blur-3xl" />
+        <div className="absolute -bottom-56 right-[-8rem] h-[640px] w-[640px] rounded-full bg-navy-700/60 blur-3xl" />
         <div
-          className="absolute inset-0 opacity-[0.07]"
+          className="absolute inset-0 opacity-[0.06]"
           style={{
             backgroundImage:
               "linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)",
-            backgroundSize: "56px 56px",
+            backgroundSize: "64px 64px",
             color: "rgb(255 255 255)",
-            maskImage: "radial-gradient(ellipse at 30% 40%, black 20%, transparent 75%)",
-            WebkitMaskImage: "radial-gradient(ellipse at 30% 40%, black 20%, transparent 75%)",
+            maskImage: "radial-gradient(ellipse at 70% 45%, black 10%, transparent 70%)",
+            WebkitMaskImage: "radial-gradient(ellipse at 70% 45%, black 10%, transparent 70%)",
           }}
         />
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold-500/60 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold-400/70 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-ink to-transparent" />
       </div>
 
-      {/* ───────────── MOBILE: compact banner card + dots ─────────────
-          Text and one button on the left, picture on the right, dots below
-          the card. Swipe left/right to change slides. Colors come from the
-          theme tokens, so it follows light and dark mode. */}
+      {/* ───────────── MOBILE: banner card + dots ───────────── */}
       <div className="px-5 pb-3 pt-4 md:hidden" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-        <div className="relative overflow-hidden rounded-3xl border border-ivory/10 bg-gradient-to-br from-gold-500/25 via-navy-900 to-navy-900 shadow-xl shadow-black/30">
+        <div className="relative overflow-hidden rounded-3xl border border-gold-500/25 bg-gradient-to-br from-gold-500/25 via-navy-900 to-navy-900 shadow-2xl shadow-black/40">
+          <div aria-hidden="true" className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-gold-300/80 to-transparent" />
           {/* All slides share ONE grid cell, so the card is always as tall
               as the tallest slide and nothing below it moves. */}
           <div className="grid">
@@ -305,33 +371,35 @@ export default function HeroCarousel() {
                     isActive ? "visible opacity-100" : "invisible opacity-0"
                   }`}
                 >
-                  <div className="min-w-0">
-                    <p className="mb-2 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-gold-400">
-                      <span aria-hidden="true" className="h-1 w-1 rounded-full bg-gold-400" />
+                  <div className={`min-w-0 ${isActive ? "hero-in" : ""}`}>
+                    <p className="flex items-center gap-2 text-xs font-medium text-gold-300">
+                      <span aria-hidden="true" className="h-px w-5 shrink-0 bg-gold-400" />
                       <span className="truncate">{s.eyebrow}</span>
                     </p>
-                    <Heading className="font-sans text-xl font-extrabold leading-[1.1] tracking-[-0.03em] text-ivory [text-wrap:balance] sm:text-2xl">
+                    <Heading className="mt-2 font-serif text-[1.65rem] font-semibold leading-[1.08] tracking-tight text-ivory [text-wrap:balance] sm:text-3xl">
                       {s.title}{" "}
-                      <span className="bg-gradient-to-r from-gold-300 to-gold-500 bg-clip-text text-transparent">
+                      <span className="bg-gradient-to-r from-gold-500 to-gold-400 bg-clip-text pr-1 italic text-transparent">
                         {s.highlight}
                       </span>
                     </Heading>
-                    <p className="mt-2 line-clamp-3 text-[13px] leading-snug text-ivory/70 sm:text-sm">{s.body}</p>
-                    <InfoLink
-                      to={s.primaryCta.to}
-                      className={`group/cta mt-3 flex w-full items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-gold-400 to-gold-500 px-3 py-2.5 text-center text-[13px] font-bold leading-tight text-ink shadow-lg shadow-gold-500/25 transition hover:brightness-110 active:scale-[0.98] sm:inline-flex sm:w-auto sm:px-5 sm:text-sm ${FOCUS_RING}`}
-                    >
-                      {s.primaryCta.label}
-                      <ArrowIcon />
-                    </InfoLink>
+                    <p className="mt-2 line-clamp-3 text-[13px] leading-snug text-ivory/80 sm:text-sm">{s.body}</p>
+                    <div>
+                      <InfoLink
+                        to={s.primaryCta.to}
+                        className={`cta-sheen group/cta relative mt-3 flex w-full items-center justify-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-b from-gold-400 to-gold-500 px-3 py-2.5 text-center text-[13px] font-bold leading-tight text-ink shadow-lg shadow-gold-500/30 transition active:scale-[0.98] sm:inline-flex sm:w-auto sm:px-5 sm:text-sm ${FOCUS_RING}`}
+                      >
+                        {s.primaryCta.label}
+                        <ArrowIcon />
+                      </InfoLink>
+                    </div>
                   </div>
 
-                  <div className="relative flex h-32 items-center justify-center sm:h-44">
-                    <div aria-hidden="true" className="absolute inset-4 rounded-full bg-gold-500/20 blur-2xl" />
+                  <div className="relative flex h-36 items-center justify-center sm:h-48">
+                    <div aria-hidden="true" className="absolute inset-3 rounded-full bg-gold-500/25 blur-2xl" />
                     <SlideImage
                       src={s.image}
                       first={i === 0}
-                      className="relative max-h-full max-w-full rounded-2xl object-contain shadow-xl ring-1 ring-ivory/15"
+                      className="relative max-h-full max-w-full rounded-2xl object-contain shadow-2xl shadow-black/50 ring-1 ring-gold-300/30"
                     />
                   </div>
                 </div>
@@ -346,7 +414,7 @@ export default function HeroCarousel() {
       </div>
 
       {/* ───────────── DESKTOP / TABLET (md and up) ───────────── */}
-      <div className="relative mx-auto hidden max-w-7xl items-center gap-12 px-6 md:grid md:min-h-[640px] md:grid-cols-[1.1fr,1fr] md:py-20 lg:px-10">
+      <div className="relative mx-auto hidden max-w-7xl items-center gap-12 px-6 md:grid md:min-h-[700px] md:grid-cols-[1.05fr,1fr] md:py-20 lg:px-10">
         <div>
           {/* All slides share ONE grid cell, so this block is always as tall
               as the tallest slide and nothing below the carousel moves.
@@ -360,57 +428,54 @@ export default function HeroCarousel() {
               return (
                 <div
                   key={s.key}
-                  className={`col-start-1 row-start-1 transition-[opacity,visibility,transform] duration-500 motion-reduce:transition-none ${
-                    isActive
-                      ? "visible translate-y-0 opacity-100"
-                      : "invisible translate-y-3 opacity-0"
+                  className={`col-start-1 row-start-1 transition-[opacity,visibility] duration-500 motion-reduce:transition-none ${
+                    isActive ? "visible opacity-100 hero-in" : "invisible opacity-0"
                   }`}
                 >
-                  {/* Eyebrow: rounded-3xl (not -full) so a wrapped two-line
-                      label doesn't turn into a blob */}
-                  <p className="inline-flex max-w-full items-center gap-2.5 rounded-3xl border border-gold-500/30 bg-gold-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-gold-300">
-                    <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold-400 opacity-60 motion-reduce:animate-none" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-gold-400" />
-                    </span>
+                  <p className="flex items-center gap-3 text-sm font-medium text-gold-300">
+                    <span aria-hidden="true" className="h-px w-10 bg-gradient-to-r from-gold-500 to-gold-300" />
                     {s.eyebrow}
                   </p>
 
-                  <Heading className="mt-6 font-sans text-5xl font-extrabold leading-[1.04] tracking-[-0.04em] text-ivory [text-wrap:balance] lg:text-6xl xl:text-7xl">
+                  <Heading className="mt-6 font-serif text-5xl font-semibold leading-[1.04] tracking-[-0.025em] text-ivory [text-wrap:balance] lg:text-6xl xl:text-[4.5rem]">
                     {s.title}{" "}
-                    <span className="bg-gradient-to-r from-gold-300 via-gold-400 to-gold-500 bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-r from-gold-500 to-gold-400 bg-clip-text pr-1 italic text-transparent">
                       {s.highlight}
                     </span>
                   </Heading>
 
                   <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-ivory/75 lg:text-xl">{s.body}</p>
 
-                  <div className="mt-9 flex flex-wrap items-center gap-4">
-                    <InfoLink
-                      to={s.primaryCta.to}
-                      className={`group/cta inline-flex items-center gap-2 rounded-full bg-gradient-to-b from-gold-400 to-gold-500 px-8 py-4 text-center text-base font-bold text-ink shadow-xl shadow-gold-500/30 transition hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 active:scale-[0.98] ${FOCUS_RING}`}
-                    >
-                      {s.primaryCta.label}
-                      <ArrowIcon />
-                    </InfoLink>
-                    <InfoLink
-                      to={s.secondaryCta.to}
-                      className={`rounded-full border border-ivory/25 bg-ivory/5 px-8 py-4 text-center text-base font-semibold text-ivory/90 transition hover:border-gold-500 hover:bg-gold-500/10 hover:text-gold-300 active:scale-[0.98] ${FOCUS_RING}`}
-                    >
-                      {s.secondaryCta.label}
-                    </InfoLink>
+                  <div>
+                    <div className="mt-9 flex flex-wrap items-center gap-4">
+                      <InfoLink
+                        to={s.primaryCta.to}
+                        className={`cta-sheen group/cta relative inline-flex items-center gap-2.5 overflow-hidden rounded-full bg-gradient-to-b from-gold-400 to-gold-500 px-9 py-4 text-center text-base font-bold text-ink shadow-[0_12px_40px_-8px] shadow-gold-500/50 ring-1 ring-gold-500/40 transition hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] ${FOCUS_RING}`}
+                      >
+                        {s.primaryCta.label}
+                        <ArrowIcon />
+                      </InfoLink>
+                      <InfoLink
+                        to={s.secondaryCta.to}
+                        className={`rounded-full border border-ivory/25 bg-ivory/[0.04] px-8 py-4 text-center text-base font-semibold text-ivory/90 transition hover:border-gold-400/70 hover:bg-gold-500/10 hover:text-gold-300 active:scale-[0.98] ${FOCUS_RING}`}
+                      >
+                        {s.secondaryCta.label}
+                      </InfoLink>
+                    </div>
+                    {s.note && <p className="mt-4 text-sm text-ivory/70">{s.note}</p>}
                   </div>
-
-                  {s.note && <p className="mt-4 text-sm text-ivory/60">{s.note}</p>}
                 </div>
               );
             })}
           </div>
 
-          {/* Trust row: quick credibility cues for first-time visitors */}
-          <ul className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-ivory/70">
-            {trust.map((label) => (
-              <li key={label} className="flex items-center gap-2">
+          {/* Trust strip */}
+          <ul className="mt-10 inline-flex flex-wrap items-center gap-y-2 rounded-2xl border border-ivory/10 bg-ivory/[0.03] px-2 py-1 text-sm text-ivory/80">
+            {trust.map((label, n) => (
+              <li
+                key={label}
+                className={`flex items-center gap-2 px-4 py-2 ${n > 0 ? "border-l border-ivory/10" : ""}`}
+              >
                 <CheckIcon />
                 {label}
               </li>
@@ -418,36 +483,82 @@ export default function HeroCarousel() {
           </ul>
 
           <div className="mt-8 border-t border-ivory/10 pt-6">
-            <Controls {...controlProps} />
+            <SlideTabs
+              slides={SLIDES}
+              index={index}
+              progress={showProgress}
+              onGo={goTo}
+              onPrev={() => goTo(index - 1)}
+              onNext={() => goTo(index + 1)}
+            />
           </div>
         </div>
 
-        {/* Picture column: slides crossfade in the same spot, beside the text
-            instead of behind it, so nothing overlaps the copy. The image sits
-            in a framed, glowing card with a gentle float. */}
-        <div className="relative h-[440px] lg:h-[520px]" aria-hidden="true">
-          <div className="absolute inset-8 rounded-full bg-gold-500/20 blur-3xl" />
-          <div className="absolute right-2 top-6 h-24 w-24 rounded-2xl border border-gold-500/30 bg-gold-500/10" />
-          <div className="absolute bottom-4 left-0 h-16 w-16 rounded-full border border-ivory/15" />
+        {/* Picture stage: the memorable moment. A framed, gold-edged card that
+            tilts toward the pointer with a moving highlight, floating trust
+            badges, and a slow zoom as each picture arrives. */}
+        <div
+          className="relative h-[460px] lg:h-[560px]"
+          aria-hidden="true"
+          onPointerMove={onStageMove}
+          onPointerLeave={onStageLeave}
+        >
+          <div className="hero-aurora absolute inset-6 rounded-full bg-gold-500/25 blur-3xl" />
+          <div className="absolute right-0 top-4 h-28 w-28 rounded-3xl border border-gold-400/30 bg-gold-500/10" />
+          <div className="absolute bottom-2 left-0 h-20 w-20 rounded-full border border-ivory/15" />
 
-          <div className="hero-float absolute inset-x-4 inset-y-6">
-            <div className="relative h-full rounded-[2rem] border border-ivory/15 bg-gradient-to-br from-ivory/10 to-ivory/[0.02] p-3 shadow-2xl shadow-black/50">
-              <div className="relative h-full overflow-hidden rounded-3xl bg-navy-900 ring-1 ring-ivory/10">
-                {SLIDES.map((s, i) => (
-                  <div
-                    key={s.key}
-                    className={`absolute inset-0 flex items-center justify-center p-3 transition-opacity duration-1000 motion-reduce:transition-none ${
-                      i === index ? "opacity-100" : "opacity-0"
-                    }`}
-                  >
-                    <SlideImage
-                      src={s.image}
-                      first={i === 0}
-                      className="max-h-full max-w-full rounded-2xl object-contain"
+          <div className="hero-float absolute inset-x-6 inset-y-8">
+            <div
+              ref={stageRef}
+              className="relative h-full [transform-style:preserve-3d]"
+              style={{
+                transform: "perspective(1200px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))",
+                transition: "transform 350ms ease-out",
+              }}
+            >
+              {/* Gold hairline frame */}
+              <div className="h-full rounded-[2rem] bg-gradient-to-br from-gold-300/70 via-gold-500/20 to-ivory/10 p-px shadow-[0_40px_90px_-20px] shadow-black/70">
+                <div className="relative h-full rounded-[calc(2rem-1px)] bg-gradient-to-br from-navy-900 to-ink p-3">
+                  <div className="relative h-full overflow-hidden rounded-3xl bg-navy-900 ring-1 ring-ivory/10">
+                    {SLIDES.map((s, i) => (
+                      <div
+                        key={s.key}
+                        className={`absolute inset-0 flex items-center justify-center p-4 transition-opacity duration-1000 motion-reduce:transition-none ${
+                          i === index ? "opacity-100" : "opacity-0"
+                        }`}
+                      >
+                        <SlideImage
+                          src={s.image}
+                          first={i === 0}
+                          className={`max-h-full max-w-full rounded-2xl object-contain shadow-2xl shadow-black/50 ${
+                            i === index ? "hero-zoom" : ""
+                          }`}
+                        />
+                      </div>
+                    ))}
+                    {/* Pointer light + soft vignette */}
+                    <div
+                      className="pointer-events-none absolute inset-0"
+                      style={{
+                        background:
+                          "radial-gradient(circle at var(--mx, 30%) var(--my, 0%), rgba(255,255,255,0.14), transparent 45%)",
+                      }}
                     />
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/40 via-transparent to-transparent" />
                   </div>
-                ))}
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/30 via-transparent to-transparent" />
+                </div>
+              </div>
+
+              {/* Floating trust badges sit in front of the card */}
+              <div className="absolute -left-8 top-12 [transform:translateZ(60px)]">
+                <div className="hero-float-b">
+                  <Badge>{trust[0]}</Badge>
+                </div>
+              </div>
+              <div className="absolute -right-6 bottom-14 [transform:translateZ(80px)]">
+                <div className="hero-float" style={{ animationDelay: "-2s" }}>
+                  <Badge>{trust[2]}</Badge>
+                </div>
               </div>
             </div>
           </div>
