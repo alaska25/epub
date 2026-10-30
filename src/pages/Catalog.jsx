@@ -20,6 +20,24 @@ function SkeletonBook() {
   );
 }
 
+const PAGE_BTN =
+  "grid h-9 w-9 place-items-center rounded-full text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400";
+
+function ChevronIcon({ dir }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden="true"
+      className="h-4 w-4"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d={dir === "prev" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />
+    </svg>
+  );
+}
+
 export default function Catalog() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -80,6 +98,12 @@ export default function Catalog() {
     else next.delete(key);
     if (key !== "page") next.delete("page");
     setSearchParams(next);
+  };
+
+  const goToPage = (n) => {
+    if (n < 1 || n > pages || n === page) return;
+    updateParam("page", n);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -172,14 +196,28 @@ export default function Catalog() {
           </div>
 
           {pages > 1 && (
-            <div className="mt-12 flex justify-center gap-2">
+            <nav
+              aria-label={t("catalog.pagination", "Pagination")}
+              className="mt-12 flex items-center justify-center gap-2"
+            >
+              <button
+                type="button"
+                onClick={() => goToPage(page - 1)}
+                disabled={page <= 1}
+                aria-label={t("catalog.prevPage", "Previous page")}
+                className={`${PAGE_BTN} border border-navy-700 text-ivory/70 hover:border-gold-500 disabled:pointer-events-none disabled:opacity-40`}
+              >
+                <ChevronIcon dir="prev" />
+              </button>
+
               {[...Array(pages)].map((_, i) => (
                 <button
                   key={i}
-                  onClick={() => updateParam("page", i + 1)}
+                  type="button"
+                  onClick={() => goToPage(i + 1)}
                   aria-label={t("catalog.pageAriaLabel", { number: i + 1 })}
                   aria-current={page === i + 1 ? "page" : undefined}
-                  className={`h-9 w-9 rounded-full text-sm ${
+                  className={`${PAGE_BTN} ${
                     page === i + 1
                       ? "bg-gold-500 text-ink"
                       : "border border-navy-700 text-ivory/70 hover:border-gold-500"
@@ -188,7 +226,17 @@ export default function Catalog() {
                   {i + 1}
                 </button>
               ))}
-            </div>
+
+              <button
+                type="button"
+                onClick={() => goToPage(page + 1)}
+                disabled={page >= pages}
+                aria-label={t("catalog.nextPage", "Next page")}
+                className={`${PAGE_BTN} border border-navy-700 text-ivory/70 hover:border-gold-500 disabled:pointer-events-none disabled:opacity-40`}
+              >
+                <ChevronIcon dir="next" />
+              </button>
+            </nav>
           )}
         </>
       )}

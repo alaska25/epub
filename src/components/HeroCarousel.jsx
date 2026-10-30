@@ -29,6 +29,8 @@ const TRUST_KEYS = [
   { key: "trust3", fallback: "Money-back guarantee" },
 ];
 
+const WORD_STAGGER_MS = 60;
+
 function CheckIcon({ className = "h-4 w-4 shrink-0 text-gold-400" }) {
   return (
     <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" className={className}>
@@ -53,6 +55,37 @@ function ArrowIcon() {
     >
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 6l6 6-6 6" />
     </svg>
+  );
+}
+
+// Word-by-word reveal. Each word slides up out of a clipping mask.
+// - Languages without spaces (Japanese, Chinese) animate as a single piece.
+// - Screen readers get the full sentence once (sr-only); the split copy is hidden.
+// - `animate` toggles the animation class, so it replays whenever it flips
+//   from false to true (i.e. each time a slide becomes active).
+// - `startAt` continues the stagger so a highlight follows the title smoothly.
+function Words({ text, animate, startAt = 0, wordClassName = "" }) {
+  const spaced = text.includes(" ");
+  const parts = spaced ? text.split(" ") : [text];
+  return (
+    <>
+      <span className="sr-only">{text}</span>
+      <span aria-hidden="true">
+        {parts.map((w, i) => (
+          // The small bottom padding / negative margin keeps descenders and
+          // italic overhang from being clipped by the mask.
+          <span key={i} className="inline-block overflow-hidden pb-[0.15em] -mb-[0.15em] pr-[0.06em] align-bottom">
+            <span
+              className={`inline-block ${animate ? "hero-word" : ""} ${wordClassName}`}
+              style={animate ? { animationDelay: `${(startAt + i) * WORD_STAGGER_MS}ms` } : undefined}
+            >
+              {w}
+              {spaced && "\u00A0"}
+            </span>
+          </span>
+        ))}
+      </span>
+    </>
   );
 }
 
@@ -152,6 +185,7 @@ function SlideTabs({ slides, index, onGo, onPrev, onNext, progress }) {
 
 // The first slide loads eagerly with high priority (it's the page's LCP
 // image); the others are lazy so they don't compete for bandwidth.
+// NOTE: React 19 wants `fetchPriority`, React 18 wants `fetchpriority`.
 function SlideImage({ src, first, className = "" }) {
   return (
     <img
@@ -179,16 +213,24 @@ function Badge({ children, className = "" }) {
   );
 }
 
+// Classes for each word of the italic highlight (gold gradient that slowly shimmers).
+const HIGHLIGHT_WORD =
+  "hero-shimmer bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 bg-[length:200%_100%] bg-clip-text italic text-transparent";
+
 export default function HeroCarousel() {
   const { t } = useTranslation();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  // True once autoplay has finished or the visitor took control.
-  const [stopped, setStopped] = useState(false);
+  // False until the first slide change. While false, slide 1 renders with NO
+  // entrance animation, so the h1 (and LCP) is visible on first paint.
+  const [navigated, setNavigated] = useState(false);
+  // Direction of the last slide change (1 = forward, -1 = back). Mobile slides
+  // use it to enter from the side the visitor is moving toward.
+  const [dir, setDir] = useState(1);
+  const gridRef = useRef(null);
   const timerRef = useRef(null);
-  // Counts automatic advances so each slide is shown once, then autoplay stops.
-  const ticksRef = useRef(0);
   const touchX = useRef(null);
+  const touchY = useRef(null);
   const stageRef = useRef(null);
 
   // Build the full slide objects (translated text + static meta) on each
@@ -209,6 +251,8 @@ export default function HeroCarousel() {
   );
 
   const advance = useCallback(() => {
+    setNavigated(true);
+    setDir(1);
     setIndex((i) => (i + 1) % SLIDE_META.length);
   }, []);
 
@@ -217,40 +261,55 @@ export default function HeroCarousel() {
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
   useEffect(() => {
-    if (paused || reduceMotion || stopped) return;
+    if (paused || reduceMotion) return;
 
     timerRef.current = setInterval(() => {
       // Don't churn through slides in a background tab.
       if (document.hidden) return;
-      // Show each slide once, then stay put on the last one.
-      if (ticksRef.current >= SLIDE_META.length - 1) {
-        clearInterval(timerRef.current);
-        setStopped(true);
-        return;
-      }
-      ticksRef.current += 1;
+      // Loops forever: after the last slide it wraps back to the first.
       advance();
     }, AUTO_ADVANCE_MS);
     return () => clearInterval(timerRef.current);
-  }, [advance, index, paused, stopped, reduceMotion]);
+  }, [advance, index, paused, reduceMotion]);
 
-  // Used for every manual action (arrows, dots, swipes, keys). Once the
-  // visitor takes control, autoplay stops for good.
+  // Used for every manual action (arrows, dots, swipes, keys). Changing the
+  // index restarts the autoplay countdown, so the loop carries on afterwards.
   const goTo = (i) => {
-    ticksRef.current = SLIDE_META.length - 1;
-    setStopped(true);
+    setNavigated(true);
+    setDir(i < index ? -1 : 1);
     setIndex(((i % SLIDE_META.length) + SLIDE_META.length) % SLIDE_META.length);
   };
 
   const onTouchStart = (e) => {
     touchX.current = e.touches[0].clientX;
+    touchY.current = e.touches[0].clientY;
+  };
+  // The card follows the finger a little (damped), then eases back on release.
+  const onTouchMove = (e) => {
+    if (reduceMotion || touchX.current === null) return;
+    const dx = e.touches[0].clientX - touchX.current;
+    const dy = e.touches[0].clientY - (touchY.current ?? 0);
+    if (Math.abs(dx) < Math.abs(dy)) return;
+    const el = gridRef.current;
+    if (!el) return;
+    el.style.transition = "none";
+    el.style.transform = `translateX(${(dx * 0.35).toFixed(1)}px)`;
+  };
+  const resetDrag = () => {
+    const el = gridRef.current;
+    if (!el) return;
+    el.style.transition = "transform 350ms cubic-bezier(.2,.7,.2,1)";
+    el.style.transform = "";
   };
   const onTouchEnd = (e) => {
+    resetDrag();
     if (touchX.current === null) return;
     const dx = e.changedTouches[0].clientX - touchX.current;
+    const dy = e.changedTouches[0].clientY - (touchY.current ?? 0);
     touchX.current = null;
-    // Ignore small movements so taps on the button still work.
-    if (Math.abs(dx) > 40) goTo(index + (dx < 0 ? 1 : -1));
+    touchY.current = null;
+    // Ignore small movements (taps) and mostly-vertical gestures (page scroll).
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) goTo(index + (dx < 0 ? 1 : -1));
   };
 
   const onKeyDown = (e) => {
@@ -279,15 +338,26 @@ export default function HeroCarousel() {
   };
 
   // The progress fill only shows while autoplay is actually counting down.
-  const showProgress = !stopped && !paused && !reduceMotion;
+  const showProgress = !paused && !reduceMotion;
+
+  // Renders the title + highlight with the word reveal.
+  const renderHeadline = (s, animate) => {
+    const titleWords = s.title.includes(" ") ? s.title.split(" ").length : 1;
+    return (
+      <>
+        <Words text={s.title} animate={animate} />
+        <Words text={s.highlight} animate={animate} startAt={titleWords} wordClassName={HIGHLIGHT_WORD} />
+      </>
+    );
+  };
 
   return (
     // Pause autoplay while the pointer is over the hero or keyboard focus is
     // inside it (also an accessibility requirement for auto-moving content).
     <section
       className="relative isolate overflow-hidden border-b border-gold-500/20 bg-ink md:min-h-[700px]"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
+      onPointerEnter={(e) => e.pointerType !== "touch" && setPaused(true)}
+      onPointerLeave={(e) => e.pointerType !== "touch" && setPaused(false)}
       onFocus={() => setPaused(true)}
       onKeyDown={onKeyDown}
       onBlur={(e) => {
@@ -302,14 +372,32 @@ export default function HeroCarousel() {
         .hero-float { animation: hero-float 7s ease-in-out infinite; }
         .hero-float-b { animation: hero-float 8s ease-in-out -3s infinite; }
 
-        /* One orchestrated entrance each time a slide becomes active. */
+        /* One orchestrated entrance each time a slide becomes active.
+           The headline is excluded: it has its own word-by-word reveal. */
         @keyframes hero-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
-        .hero-in > * { animation: hero-rise 800ms cubic-bezier(.2,.7,.2,1) both; }
+        .hero-in > * { animation: hero-rise 700ms cubic-bezier(.2,.7,.2,1) both; }
+        .hero-in > .hero-title { animation: none; }
         .hero-in > *:nth-child(1) { animation-delay: 0ms; }
-        .hero-in > *:nth-child(2) { animation-delay: 90ms; }
-        .hero-in > *:nth-child(3) { animation-delay: 180ms; }
-        .hero-in > *:nth-child(4) { animation-delay: 270ms; }
-        .hero-in > *:nth-child(5) { animation-delay: 340ms; }
+        .hero-in > *:nth-child(3) { animation-delay: 220ms; }
+        .hero-in > *:nth-child(4) { animation-delay: 300ms; }
+        .hero-in > *:nth-child(5) { animation-delay: 360ms; }
+
+        /* Headline words slide up out of a mask. */
+        @keyframes hero-word { from { transform: translateY(105%); } to { transform: none; } }
+        /* Mobile: the picture enters from the side the visitor is heading. */
+        @keyframes hero-slide { from { opacity: 0; transform: translateX(calc(var(--dir, 1) * 36px)) scale(.94); } to { opacity: 1; transform: none; } }
+        .hero-slide { animation: hero-slide 700ms cubic-bezier(.2,.7,.2,1) 120ms both; }
+        .hero-in > .hero-slide { animation: hero-slide 700ms cubic-bezier(.2,.7,.2,1) 120ms both; }
+
+        .hero-word { animation: hero-word 700ms cubic-bezier(.2,.7,.2,1) both; }
+
+        /* Slow gold shimmer across the highlighted words. */
+        @keyframes hero-shimmer { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        .hero-shimmer { animation: hero-shimmer 6s ease-in-out infinite; }
+        /* When the word reveal runs, both animations apply to the same element. */
+        .hero-word.hero-shimmer {
+          animation: hero-word 700ms cubic-bezier(.2,.7,.2,1) both, hero-shimmer 6s ease-in-out 1s infinite;
+        }
 
         /* Slow zoom on the active picture */
         @keyframes hero-zoom { from { transform: scale(1.06); } to { transform: scale(1); } }
@@ -328,7 +416,8 @@ export default function HeroCarousel() {
         .hero-aurora { animation: hero-aurora 14s ease-in-out infinite; }
 
         @media (prefers-reduced-motion: reduce) {
-          .hero-progress, .hero-float, .hero-float-b, .hero-aurora, .hero-zoom, .hero-in > * { animation: none; }
+          .hero-progress, .hero-float, .hero-float-b, .hero-aurora, .hero-zoom,
+          .hero-in > *, .hero-in > .hero-slide, .hero-slide, .hero-word, .hero-shimmer, .hero-word.hero-shimmer { animation: none; }
           .hero-progress { width: 100%; }
           .cta-sheen::after { display: none; }
         }
@@ -354,61 +443,72 @@ export default function HeroCarousel() {
       </div>
 
       {/* ───────────── MOBILE: banner card + dots ───────────── */}
-      <div className="px-5 pb-3 pt-4 md:hidden" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <div className="px-5 pb-3 pt-4 md:hidden" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} onTouchCancel={resetDrag}>
         <div className="relative overflow-hidden rounded-3xl border border-gold-500/25 bg-gradient-to-br from-gold-500/25 via-navy-900 to-navy-900 shadow-2xl shadow-black/40">
           <div aria-hidden="true" className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-gold-300/80 to-transparent" />
           {/* All slides share ONE grid cell, so the card is always as tall
               as the tallest slide and nothing below it moves. */}
-          <div className="grid">
+          <div className="grid" ref={gridRef} style={{ "--dir": dir }}>
             {SLIDES.map((s, i) => {
               const isActive = i === index;
+              const animate = isActive && navigated;
               const Heading = i === 0 ? "h1" : "h2";
 
               return (
+                // Layout: eyebrow across the top, headline + picture side by
+                // side, then body copy and the button at full card width.
                 <div
                   key={s.key}
-                  className={`col-start-1 row-start-1 grid grid-cols-[1.15fr,1fr] items-center gap-3 p-4 transition-[opacity,visibility] duration-500 motion-reduce:transition-none ${
+                  className={`col-start-1 row-start-1 grid grid-cols-[1.2fr,1fr] items-center gap-x-3 gap-y-4 p-5 transition-[opacity,visibility] duration-500 motion-reduce:transition-none ${
                     isActive ? "visible opacity-100" : "invisible opacity-0"
-                  }`}
+                  } ${animate ? "hero-in" : ""}`}
                 >
-                  <div className={`min-w-0 ${isActive ? "hero-in" : ""}`}>
-                    <p className="flex items-center gap-2 text-xs font-medium text-gold-300">
-                      <span aria-hidden="true" className="h-px w-5 shrink-0 bg-gold-400" />
-                      <span className="truncate">{s.eyebrow}</span>
-                    </p>
-                    <Heading className="mt-2 font-serif text-[1.65rem] font-semibold leading-[1.08] tracking-tight text-ivory [text-wrap:balance] sm:text-3xl">
-                      {s.title}{" "}
-                      <span className="bg-gradient-to-r from-gold-500 to-gold-400 bg-clip-text pr-1 italic text-transparent">
-                        {s.highlight}
-                      </span>
-                    </Heading>
-                    <p className="mt-2 line-clamp-3 text-[13px] leading-snug text-ivory/80 sm:text-sm">{s.body}</p>
-                    <div>
-                      <InfoLink
-                        to={s.primaryCta.to}
-                        className={`cta-sheen group/cta relative mt-3 flex w-full items-center justify-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-b from-gold-400 to-gold-500 px-3 py-2.5 text-center text-[13px] font-bold leading-tight text-ink shadow-lg shadow-gold-500/30 transition active:scale-[0.98] sm:inline-flex sm:w-auto sm:px-5 sm:text-sm ${FOCUS_RING}`}
-                      >
-                        {s.primaryCta.label}
-                        <ArrowIcon />
-                      </InfoLink>
+                  <p className="col-span-2 flex items-center gap-3 text-xs font-medium tracking-wide text-gold-300">
+                    <span aria-hidden="true" className="h-px w-8 shrink-0 bg-gradient-to-r from-gold-500 to-gold-300" />
+                    <span className="leading-snug">{s.eyebrow}</span>
+                  </p>
+
+                  <Heading className="hero-title min-w-0 font-serif text-[1.85rem] font-semibold leading-[1.05] tracking-[-0.02em] text-ivory [text-wrap:balance]">
+                    {renderHeadline(s, animate)}
+                  </Heading>
+
+                  <div className={`relative flex h-44 items-center justify-center sm:h-52 ${animate ? "hero-slide" : ""}`}>
+                    <div aria-hidden="true" className="hero-aurora absolute inset-2 rounded-full bg-gold-500/25 blur-2xl" />
+                    <div className={`relative flex h-full w-full items-center justify-center ${isActive ? "hero-float-b" : ""}`}>
+                      <SlideImage
+                        src={s.image}
+                        first={i === 0}
+                        className="max-h-full max-w-full rounded-2xl object-contain shadow-2xl shadow-black/50 ring-1 ring-gold-300/40"
+                      />
                     </div>
                   </div>
 
-                  <div className="relative flex h-36 items-center justify-center sm:h-48">
-                    <div aria-hidden="true" className="absolute inset-3 rounded-full bg-gold-500/25 blur-2xl" />
-                    <SlideImage
-                      src={s.image}
-                      first={i === 0}
-                      className="relative max-h-full max-w-full rounded-2xl object-contain shadow-2xl shadow-black/50 ring-1 ring-gold-300/30"
-                    />
-                  </div>
+                  <p className="col-span-2 text-sm leading-relaxed text-ivory/80">{s.body}</p>
+
+                  <InfoLink
+                    to={s.primaryCta.to}
+                    className={`cta-sheen group/cta relative col-span-2 flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-gradient-to-b from-gold-400 to-gold-500 px-5 py-3.5 text-center text-sm font-bold leading-tight text-ink shadow-[0_10px_30px_-8px] shadow-gold-500/50 ring-1 ring-gold-500/40 transition active:scale-[0.98] ${FOCUS_RING}`}
+                  >
+                    {s.primaryCta.label}
+                    <ArrowIcon />
+                  </InfoLink>
                 </div>
               );
             })}
           </div>
+
+          {/* Trust points sit inside the card, under a hairline divider */}
+          <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 border-t border-gold-500/20 px-4 py-3 text-xs font-medium text-ivory/85">
+            {[trust[0], trust[2]].map((label) => (
+              <li key={label} className="flex items-center gap-1.5">
+                <CheckIcon className="h-3.5 w-3.5 shrink-0 text-gold-400" />
+                {label}
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <div className="mt-1 flex justify-center">
+        <div className="mt-2 flex justify-center">
           <Dots index={index} count={SLIDES.length} onGo={goTo} progress={showProgress} />
         </div>
       </div>
@@ -423,13 +523,14 @@ export default function HeroCarousel() {
           <div className="grid">
             {SLIDES.map((s, i) => {
               const isActive = i === index;
+              const animate = isActive && navigated;
               const Heading = i === 0 ? "h1" : "h2";
 
               return (
                 <div
                   key={s.key}
                   className={`col-start-1 row-start-1 transition-[opacity,visibility] duration-500 motion-reduce:transition-none ${
-                    isActive ? "visible opacity-100 hero-in" : "invisible opacity-0"
+                    isActive ? `visible opacity-100 ${animate ? "hero-in" : ""}` : "invisible opacity-0"
                   }`}
                 >
                   <p className="flex items-center gap-3 text-sm font-medium text-gold-300">
@@ -437,11 +538,8 @@ export default function HeroCarousel() {
                     {s.eyebrow}
                   </p>
 
-                  <Heading className="mt-6 font-serif text-5xl font-semibold leading-[1.04] tracking-[-0.025em] text-ivory [text-wrap:balance] lg:text-6xl xl:text-[4.5rem]">
-                    {s.title}{" "}
-                    <span className="bg-gradient-to-r from-gold-500 to-gold-400 bg-clip-text pr-1 italic text-transparent">
-                      {s.highlight}
-                    </span>
+                  <Heading className="hero-title mt-6 font-serif text-5xl font-semibold leading-[1.04] tracking-[-0.025em] text-ivory [text-wrap:balance] lg:text-6xl xl:text-[4.5rem]">
+                    {renderHeadline(s, animate)}
                   </Heading>
 
                   <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-ivory/75 lg:text-xl">{s.body}</p>
