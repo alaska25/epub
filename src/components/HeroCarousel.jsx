@@ -7,13 +7,31 @@ import image29204 from "./images/29204.jpg";
 import image29236 from "./images/29236.jpg";
 import image28821 from "./images/28821.png";
 
-// Slide copy comes from translation keys (heroCarousel.slide1/2/3.*);
+// Slide copy comes from translation keys (heroCarousel.slide1/2/3/4.*);
 // only the images and link targets stay hardcoded here.
+// `image` is the built-in picture. Real product covers passed in through the
+// `images` prop (same order as this list) replace it once they have loaded.
+// Slide 4 (templates) has no built-in picture, so it shows a simple
+// placeholder until the first template cover arrives.
 const SLIDE_META = [
   { key: "slide1", primaryTo: "/catalog", secondaryTo: "/catalog?search=free", image: image29204, hasNote: false },
   { key: "slide2", primaryTo: "/catalog", secondaryTo: "/refund-policy", image: image29236, hasNote: false },
   { key: "slide3", primaryTo: "/catalog?search=free", secondaryTo: "/about", image: image28821, hasNote: true },
+  { key: "slide4", primaryTo: "/templates", secondaryTo: "/catalog", image: null, hasNote: false },
 ];
+
+// English text for the templates slide, used until you add
+// heroCarousel.slide4.* to your locale files.
+const SLIDE_DEFAULTS = {
+  slide4: {
+    eyebrow: "Templates for developers",
+    title: "Launch your next site",
+    highlight: "in an afternoon",
+    body: "Production-ready templates with the full source code included. Customize, deploy, done.",
+    primaryCta: "Browse templates",
+    secondaryCta: "Browse books",
+  },
+};
 
 // Long enough to finish reading a slide.
 const AUTO_ADVANCE_MS = 8000;
@@ -102,7 +120,7 @@ function Dots({ index, count, onGo, progress }) {
             key={i}
             onClick={() => onGo(i)}
             aria-label={t("heroCarousel.goToSlide", { number: i + 1 })}
-            aria-current={active}
+            aria-current={active ? "true" : undefined}
             className={`group rounded-full px-1 py-2.5 ${FOCUS_RING}`}
           >
             <span
@@ -134,7 +152,7 @@ function SlideTabs({ slides, index, onGo, onPrev, onNext, progress }) {
 
   return (
     <div className="flex items-end gap-6">
-      <div className="grid flex-1 grid-cols-3 gap-4">
+      <div className="grid flex-1 gap-4" style={{ gridTemplateColumns: `repeat(${slides.length}, minmax(0, 1fr))` }}>
         {slides.map((s, i) => {
           const active = i === index;
           return (
@@ -142,7 +160,7 @@ function SlideTabs({ slides, index, onGo, onPrev, onNext, progress }) {
               key={s.key}
               onClick={() => onGo(i)}
               aria-label={t("heroCarousel.goToSlide", { number: i + 1 })}
-              aria-current={active}
+              aria-current={active ? "true" : undefined}
               className={`group/tab text-left ${FOCUS_RING} rounded-sm`}
             >
               <span className="relative block h-[3px] overflow-hidden rounded-full bg-ivory/15">
@@ -183,10 +201,25 @@ function SlideTabs({ slides, index, onGo, onPrev, onNext, progress }) {
   );
 }
 
+// Shown when a slide has no picture yet (the templates slide before its cover loads).
+function ImageFallback() {
+  return (
+    <div
+      aria-hidden="true"
+      className="grid aspect-[16/10] h-full max-h-full w-full max-w-full place-items-center rounded-2xl bg-navy-900 text-gold-400 ring-1 ring-gold-300/40"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-14 w-14">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+      </svg>
+    </div>
+  );
+}
+
 // The first slide loads eagerly with high priority (it's the page's LCP
 // image); the others are lazy so they don't compete for bandwidth.
 // NOTE: React 19 wants `fetchPriority`, React 18 wants `fetchpriority`.
 function SlideImage({ src, first, className = "" }) {
+  if (!src) return <ImageFallback />;
   return (
     <img
       src={src}
@@ -217,7 +250,9 @@ function Badge({ children, className = "" }) {
 const HIGHLIGHT_WORD =
   "hero-shimmer bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 bg-[length:200%_100%] bg-clip-text italic text-transparent";
 
-export default function HeroCarousel() {
+// `images`: optional list of picture URLs, one per slide in SLIDE_META order.
+// Missing or empty entries fall back to the slide's built-in picture.
+export default function HeroCarousel({ images = [] }) {
   const { t } = useTranslation();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -235,15 +270,19 @@ export default function HeroCarousel() {
 
   // Build the full slide objects (translated text + static meta) on each
   // render so a language change immediately updates the copy.
-  const SLIDES = SLIDE_META.map((meta) => ({
+  const copy = (meta, field) =>
+    t(`heroCarousel.${meta.key}.${field}`, { defaultValue: SLIDE_DEFAULTS[meta.key]?.[field] });
+
+  const SLIDES = SLIDE_META.map((meta, i) => ({
     ...meta,
-    eyebrow: t(`heroCarousel.${meta.key}.eyebrow`),
-    title: t(`heroCarousel.${meta.key}.title`),
-    highlight: t(`heroCarousel.${meta.key}.highlight`),
-    body: t(`heroCarousel.${meta.key}.body`),
-    primaryCta: { label: t(`heroCarousel.${meta.key}.primaryCta`), to: meta.primaryTo },
-    secondaryCta: { label: t(`heroCarousel.${meta.key}.secondaryCta`), to: meta.secondaryTo },
-    note: meta.hasNote ? t(`heroCarousel.${meta.key}.note`) : null,
+    image: images[i] || meta.image,
+    eyebrow: copy(meta, "eyebrow"),
+    title: copy(meta, "title"),
+    highlight: copy(meta, "highlight"),
+    body: copy(meta, "body"),
+    primaryCta: { label: copy(meta, "primaryCta"), to: meta.primaryTo },
+    secondaryCta: { label: copy(meta, "secondaryCta"), to: meta.secondaryTo },
+    note: meta.hasNote ? copy(meta, "note") : null,
   }));
 
   const trust = TRUST_KEYS.map(({ key, fallback }) =>
@@ -358,7 +397,11 @@ export default function HeroCarousel() {
       className="relative isolate overflow-hidden border-b border-gold-500/20 bg-ink md:min-h-[700px]"
       onPointerEnter={(e) => e.pointerType !== "touch" && setPaused(true)}
       onPointerLeave={(e) => e.pointerType !== "touch" && setPaused(false)}
-      onFocus={() => setPaused(true)}
+      // Only keyboard focus pauses autoplay. A mouse click or tap on a dot or
+      // arrow also moves focus there, which used to freeze the carousel for good.
+      onFocus={(e) => {
+        if (e.target.matches?.(":focus-visible")) setPaused(true);
+      }}
       onKeyDown={onKeyDown}
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget)) setPaused(false);

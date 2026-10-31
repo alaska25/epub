@@ -384,6 +384,18 @@ export default function Home() {
   // The first featured book that has a free sample (BookDetail uses sampleFileType the same way).
   const sampleBook = detailSample || featured.find((b) => b.sampleFileType) || null;
   const samplePath = sampleBook ? `/sample/${sampleBook._id}` : "/catalog?search=free";
+
+  // Featured books first (the list is otherwise newest-first).
+  const byFeatured = [...featured].sort((x, y) => Number(!!y.featured) - Number(!!x.featured));
+
+  // Real covers for the hero, in slide order: two featured books, a free book,
+  // then a template. Until the data arrives the hero keeps its built-in pictures.
+  const heroImages = [
+    byFeatured[0]?.coverUrl,
+    byFeatured[1]?.coverUrl,
+    (byFeatured.find((b) => b.isFree) || byFeatured[2])?.coverUrl,
+    templates[0]?.coverUrl,
+  ];
   const onTabKey = (e) => {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
     const next = tab === "readers" ? "developers" : "readers";
@@ -400,7 +412,7 @@ export default function Home() {
       `}</style>
 
       {/* Hero: above the fold, so no reveal */}
-      <HeroCarousel />
+      <HeroCarousel images={heroImages} />
 
       {/* Featured books: right under the hero, so no reveal either */}
       {loading ? (
@@ -421,7 +433,7 @@ export default function Home() {
           <p className="text-ivory/60">{t("common.noBooksYet")}</p>
         </div>
       ) : (
-        <BookGrid books={featured} />
+        <BookGrid books={byFeatured} />
       )}
 
       {/* Two doors: readers and builders */}
