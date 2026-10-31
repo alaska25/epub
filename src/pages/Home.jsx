@@ -244,6 +244,50 @@ function SamplePage({ chapter, tag }) {
   );
 }
 
+// A real book that has a free sample: its cover, title, author, rating and the
+// start of its description, on the same paper card. Clicking opens its sample.
+// Falls back to the drawn page when no featured book has a sample yet.
+function SamplePreview({ book, chapter, tag, cta }) {
+  if (!book) return <SamplePage chapter={chapter} tag={tag} />;
+  const rated = book.reviewCount > 0 && book.avgRating != null;
+  const excerpt = (book.description || "").replace(/\s+/g, " ").trim();
+  return (
+    <Link
+      to={`/sample/${book._id}`}
+      aria-label={`${cta}: ${book.title}`}
+      className="group relative mx-auto block w-full max-w-sm rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-4 focus-visible:ring-offset-ink"
+    >
+      <div aria-hidden="true" className="absolute inset-0 translate-x-4 translate-y-4 rotate-[5deg] rounded-2xl bg-gold-500/20 blur-sm" />
+      <div aria-hidden="true" className="absolute inset-0 translate-x-2 translate-y-2 rotate-[2.5deg] rounded-2xl bg-[#e4dcc8]" />
+      <div className="relative -rotate-2 rounded-2xl bg-[#faf6ec] p-7 shadow-[0_40px_80px_-20px] shadow-black/70 transition-transform duration-700 group-hover:rotate-0 motion-reduce:transition-none">
+        <span className="absolute -right-3 top-7 rounded-l-full bg-gradient-to-b from-gold-400 to-gold-500 py-1.5 pl-4 pr-5 text-xs font-bold text-ink shadow-lg">{tag}</span>
+        <p className="font-serif text-sm italic text-[#1c1a16]/55">{chapter}</p>
+        <div className="mt-4 flex gap-4">
+          {book.coverUrl && (
+            <img src={book.coverUrl} alt="" loading="lazy" decoding="async" className="aspect-[2/3] w-24 shrink-0 rounded-md object-cover shadow-lg ring-1 ring-black/10" />
+          )}
+          <div className="min-w-0 pr-6">
+            <h3 className="font-serif text-xl font-semibold leading-tight text-[#1c1a16]">{book.title}</h3>
+            {book.author && <p className="mt-1 text-sm text-[#1c1a16]/65">{book.author}</p>}
+            {rated && (
+              <p className="mt-2 text-sm font-semibold text-[#8a6a1f]">
+                ★ {Number(book.avgRating).toFixed(1)} <span className="font-normal text-[#1c1a16]/55">({book.reviewCount})</span>
+              </p>
+            )}
+          </div>
+        </div>
+        {excerpt && <p className="mt-5 line-clamp-4 font-serif text-[15px] leading-relaxed text-[#1c1a16]/80">{excerpt}</p>}
+        <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#8a6a1f]">
+          {cta}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true" className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 export default function Home() {
   const { t } = useTranslation();
   const [featured, setFeatured] = useState([]);
@@ -251,6 +295,7 @@ export default function Home() {
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
   const [templates, setTemplates] = useState([]);
+  const [detailSample, setDetailSample] = useState(null);
   const [tab, setTab] = useState("readers");
   const [email, setEmail] = useState("");
   const [subStatus, setSubStatus] = useState("");
@@ -279,6 +324,29 @@ export default function Home() {
       ignore = true;
     };
   }, [retryKey]);
+
+  // Find a book with a free sample and load its full page once (the book list
+  // only carries a few fields, so the description comes from the detail request).
+  // If the list does not include `sampleFileType`, check the first few books instead.
+  useEffect(() => {
+    if (!featured.length) return;
+    let ignore = false;
+    const load = (b) =>
+      api
+        .get(`/books/${b._id}`, { silent: true })
+        .then((r) => r.data)
+        .catch(() => null);
+    const flagged = featured.find((b) => b.sampleFileType);
+    const run = flagged
+      ? load(flagged)
+      : Promise.all(featured.slice(0, 6).map(load)).then((list) => list.find((b) => b?.sampleFileType) || null);
+    run.then((d) => {
+      if (!ignore) setDetailSample(d);
+    });
+    return () => {
+      ignore = true;
+    };
+  }, [featured]);
 
   // A few templates for the "Ship your next site faster" card. If this fails
   // the card simply keeps its abstract code-window picture.
@@ -313,6 +381,9 @@ export default function Home() {
   };
 
   const active = TABS.find((x) => x.id === tab);
+  // The first featured book that has a free sample (BookDetail uses sampleFileType the same way).
+  const sampleBook = detailSample || featured.find((b) => b.sampleFileType) || null;
+  const samplePath = sampleBook ? `/sample/${sampleBook._id}` : "/catalog?search=free";
   const onTabKey = (e) => {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
     const next = tab === "readers" ? "developers" : "readers";
@@ -402,12 +473,17 @@ export default function Home() {
                 </li>
               ))}
             </ol>
-            <Link to="/catalog?search=free" className={`mt-10 ${BTN_GOLD}`}>
+            <Link to={samplePath} className={`mt-10 ${BTN_GOLD}`}>
               {t("howItWorks.cta", "Read a free sample")}
             </Link>
           </Reveal>
           <Reveal delay={150}>
-            <SamplePage chapter={t("howItWorks.sampleChapter", "Chapter 1")} tag={t("howItWorks.sampleTag", "Free sample")} />
+            <SamplePreview
+              book={sampleBook}
+              chapter={t("howItWorks.sampleChapter", "Chapter 1")}
+              tag={t("howItWorks.sampleTag", "Free sample")}
+              cta={t("howItWorks.readThis", "Read this sample")}
+            />
           </Reveal>
         </div>
       </section>
@@ -508,7 +584,7 @@ export default function Home() {
             {t("finalCta.body", "No account, no card. If you like it, the whole book is a click away.")}
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
-            <Link to="/catalog?search=free" className={BTN_GOLD}>
+            <Link to={samplePath} className={BTN_GOLD}>
               {t("finalCta.primary", "Read a free sample")}
             </Link>
             <Link

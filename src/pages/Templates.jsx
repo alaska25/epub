@@ -272,16 +272,17 @@ export default function Templates() {
                       src={t.coverUrl}
                       alt={`Preview of ${t.title}`}
                       loading={index < EAGER_COUNT ? "eager" : "lazy"}
-                      fetchPriority={index === 0 ? "high" : undefined}
+                      fetchpriority={index === 0 ? "high" : undefined}
                       decoding="async"
-                      className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                      className="h-full w-full object-cover object-top transition duration-500 md:group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                     />
+                    {/* Fixed black, so the haze and chip look the same in light and dark themes */}
                     <div
                       aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/50 via-transparent to-transparent"
+                      className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent"
                     />
                     {t.category && (
-                      <span className="absolute left-3 top-3 rounded-full border border-white/10 bg-ink/60 px-3 py-1 text-xs font-medium text-ivory backdrop-blur-md">
+                      <span className="absolute left-3 top-3 rounded-full bg-black/80 px-3 py-1 text-xs font-medium text-white ring-1 ring-white/20">
                         {t.category}
                       </span>
                     )}

@@ -57,7 +57,7 @@ function BookCard({ book, showAddToCart = false, compact = false, priority = fal
   const cartLabel = book.isFree ? "Get free" : inCart ? "In cart" : "Add to cart";
 
   return (
-    // The card is now an <article>. Only the cover and title are links, and the
+    // The card is an <article>. Only the cover and title are links, and the
     // buttons sit outside them, so there is no <button> nested inside an <a>.
     <article
       className={`group flex h-full w-full flex-col rounded-2xl border border-navy-700/60 bg-navy-900/40 transition-all duration-300 hover:-translate-y-0.5 hover:border-gold-500/50 hover:shadow-xl hover:shadow-black/10 motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
@@ -75,16 +75,18 @@ function BookCard({ book, showAddToCart = false, compact = false, priority = fal
           src={book.coverUrl}
           alt={`Cover of ${book.title}`}
           loading={priority ? "eager" : "lazy"}
-          fetchPriority={priority === "high" ? "high" : undefined}
+          fetchpriority={priority === "high" ? "high" : undefined}
           decoding="async"
           width="400"
           height="600"
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+          className="h-full w-full object-cover transition duration-500 md:group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
         />
 
+        {/* Fixed black with white text (no blur), so the badge looks the same
+            in light and dark themes instead of turning grey on the cover. */}
         {book.fileType && (
           <span
-            className={`absolute right-2 top-2 rounded-full bg-ink/75 font-semibold uppercase tracking-wider text-ivory backdrop-blur-md ${
+            className={`absolute right-2 top-2 rounded-full bg-black/75 font-semibold uppercase tracking-wider text-white ring-1 ring-white/15 ${
               compact ? "px-1.5 py-0.5 text-[8px]" : "px-2.5 py-1 text-[10px]"
             }`}
           >
@@ -105,9 +107,11 @@ function BookCard({ book, showAddToCart = false, compact = false, priority = fal
 
       {/* Details */}
       <div className={`flex flex-1 flex-col ${compact ? "mt-2.5 px-0.5" : "mt-4 px-1"}`}>
+        {/* Two lines of height are always reserved, so one-line titles don't
+            pull the price and buttons up out of line with their neighbours. */}
         <h3
           className={`break-words font-display font-semibold leading-snug text-ivory ${
-            compact ? "line-clamp-2 min-h-[2.5em] text-xs" : "line-clamp-2 text-base"
+            compact ? "line-clamp-2 min-h-[2.5em] text-xs" : "line-clamp-2 min-h-[2.75em] text-base"
           }`}
         >
           <Link
@@ -118,7 +122,7 @@ function BookCard({ book, showAddToCart = false, compact = false, priority = fal
           </Link>
         </h3>
 
-        {/* Subtitle only shown in full layout — no room for it in compact mode */}
+        {/* Subtitle only shown in full layout, no room for it in compact mode */}
         {!compact && book.subtitle && (
           <p className="mt-1 truncate text-sm text-ivory/60">{book.subtitle}</p>
         )}
