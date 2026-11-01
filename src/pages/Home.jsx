@@ -6,6 +6,7 @@ import HeroCarousel from "../components/HeroCarousel.jsx";
 import BookGrid from "../components/BookGrid.jsx";
 import Reveal from "../components/Reveal.jsx";
 import TemplateShowcase from "../components/TemplateShowcase.jsx";
+import { track } from "../utils/analytics.js";
 
 const FOCUS_RING =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400";
@@ -371,6 +372,7 @@ export default function Home() {
     setSubStatus("");
     try {
       const { data } = await api.post("/newsletter/subscribe", { email: email.trim() });
+      track("newsletter_signup");
       setSubStatus(data?.message || t("newsletter.success", "You're subscribed."));
       setEmail("");
     } catch (err) {

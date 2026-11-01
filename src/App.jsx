@@ -7,6 +7,7 @@ import { AuthModalProvider } from "./context/AuthModalContext.jsx";
 import AuthModal from "./components/AuthModal.jsx";
 import ToastContainer from "./components/ToastContainer.jsx";
 import ChatWidget from "./components/ChatWidget.jsx";
+import RouteTracker from "./components/RouteTracker.jsx";
 
 // Pages visitors land on first (including from shared social links) load
 // eagerly, so there's no "Loading…" flash after the page opens. Heavy or
@@ -47,6 +48,8 @@ function RouteFallback() {
 export default function App() {
   return (
     <AuthModalProvider>
+      {/* Starts analytics and reports a page view on every route change */}
+      <RouteTracker />
       <div className="flex min-h-screen flex-col bg-ink">
         <Navbar />
         <main className="flex-1">

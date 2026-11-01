@@ -2,6 +2,7 @@ import { memo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import { flyToCart } from "../utils/flyToCart.js";
+import { cartEvent } from "../utils/analytics.js";
 import StarRating from "./StarRating.jsx";
 
 const focusRing =
@@ -50,6 +51,7 @@ function BookCard({ book, showAddToCart = false, compact = false, priority = fal
     // so the badge count changes on arrival instead of on click.
     flyToCart(imgRef.current).finally(() => {
       addItem(book);
+      cartEvent(book, "book");
       pendingRef.current = false;
     });
   };

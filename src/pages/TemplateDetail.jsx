@@ -7,6 +7,7 @@ import { useAuthModal } from "../context/AuthModalContext.jsx";
 import { flyToCart } from "../utils/flyToCart.js";
 import { pushToast } from "../utils/toastStore.js";
 import Seo from "../components/Seo.jsx";
+import { track, cartEvent } from "../utils/analytics.js";
 
 const SITE = "https://www.adyoolau.com";
 
@@ -142,6 +143,7 @@ export default function TemplateDetail() {
     // Without this, checkout can mistake it for a book (bookIds) and the
     // backend fails to find it, so the buyer can't pay.
     addItem({ ...template, itemType: "template" });
+    cartEvent(template, "template");
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };
@@ -155,6 +157,7 @@ export default function TemplateDetail() {
     setClaiming(true);
     try {
       await api.post(`/templates/${template._id}/claim`);
+      track("claim_free", { item_id: template._id, item_name: template.title });
       navigate("/library");
     } catch (err) {
       setError(err.response?.data?.message || "Could not claim this template.");

@@ -4,6 +4,7 @@ import api from "../api/axios.js";
 import { useCart } from "../context/CartContext.jsx";
 import { flyToCart } from "../utils/flyToCart.js";
 import BackButton from "../components/BackButton.jsx";
+import { cartEvent } from "../utils/analytics.js";
 
 const focusRing =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-ink";
@@ -106,6 +107,7 @@ export default function Templates() {
     // Without this, checkout treats it as a book (bookIds), the backend can't
     // find it in the Book collection, and create-order fails with a 400.
     addItem({ ...template, itemType: "template" });
+    cartEvent(template, "template");
     setAddedId(template._id);
     setTimeout(() => setAddedId((id) => (id === template._id ? null : id)), 1500);
   };

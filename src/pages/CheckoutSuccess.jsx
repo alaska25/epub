@@ -1,5 +1,8 @@
+import { useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import api from "../api/axios.js";
 import { useCart } from "../context/CartContext.jsx";
+import { track } from "../utils/analytics.js";
 
 export default function CheckoutSuccess() {
   const [searchParams] = useSearchParams();
@@ -9,6 +12,72 @@ export default function CheckoutSuccess() {
   // Cart.jsx already removes purchased items after payment, so anything still
   // here was saved for later. We must NOT call clearCart() or we'd delete it.
   const savedCount = items.length;
+
+  // Report the sale to analytics, once per order. Reloading this page does not
+  // count it again. The customer's orders are read so the total can be reported; if that
+  // fails, the sale is still counted, just without its amount.
+  useEffect(() => {
+    if (!orderId) return;
+    const key = `ga_purchase_${orderId}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+    } catch {
+      /* storage unavailable: carry on */
+    }
+
+    let ignore = false;
+    const send = (order) => {
+      if (ignore) return;
+      // Only count orders that are actually paid. Orders still under review
+      // (or failed) are not sales yet.
+      if (order && order.status !== "paid") return;
+
+      // The server fills in the book/template (or a title-only copy when it was
+      // deleted), so the id is read from there, falling back to the title.
+      const idOf = (ref, item) => String(ref?._id || item.title || "unknown");
+      const gaItems = [
+        ...(order?.books || []).map((i) => ({
+          item_id: idOf(i.book, i),
+          item_name: i.title,
+          item_category: "book",
+          price: Number(i.price) || 0,
+          quantity: 1,
+        })),
+        ...(order?.templates || []).map((i) => ({
+          item_id: idOf(i.template, i),
+          item_name: i.title,
+          item_category: "template",
+          price: Number(i.price) || 0,
+          quantity: 1,
+        })),
+      ];
+      track("purchase", {
+        transaction_id: orderId,
+        currency: order?.currency || "USD",
+        value: Number(order?.totalAmount) || 0,
+        items: gaItems,
+      });
+      try {
+        sessionStorage.setItem(key, "1");
+      } catch {
+        /* ignore */
+      }
+    };
+
+    // There is no "get one order" endpoint, so read the customer's own orders
+    // (GET /orders/my) and pick the one that was just paid.
+    api
+      .get("/orders/my", { silent: true })
+      .then(({ data }) => {
+        const list = Array.isArray(data) ? data : data?.orders ?? [];
+        send(list.find((o) => String(o._id) === String(orderId)) || null);
+      })
+      .catch(() => send(null));
+
+    return () => {
+      ignore = true;
+    };
+  }, [orderId]);
 
   return (
     <div className="mx-auto max-w-xl px-6 py-24 text-center">

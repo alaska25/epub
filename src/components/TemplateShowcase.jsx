@@ -5,6 +5,7 @@ import api from "../api/axios.js";
 import Reveal from "./Reveal.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { flyToCart } from "../utils/flyToCart.js";
+import { cartEvent } from "../utils/analytics.js";
 
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-ink";
@@ -84,6 +85,7 @@ export default function TemplateShowcase({ templates: provided }) {
     // Tag the item as a template so the cart sends it to checkout as one.
     // Without this, checkout treats it as a book (bookIds) and create-order fails with a 400.
     addItem({ ...template, itemType: "template" });
+    cartEvent(template, "template");
     setAddedId(template._id);
     clearTimeout(addedTimerRef.current);
     addedTimerRef.current = setTimeout(
