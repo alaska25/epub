@@ -10,6 +10,7 @@ import AdminTemplateForm from "./admin/AdminTemplateForm.jsx";
 import AdminOrders from "./admin/AdminOrders.jsx";
 import AdminUsers from "./admin/AdminUsers.jsx";
 import AdminCustomers from "./admin/AdminCustomers.jsx";
+import AdminTraffic from "./admin/AdminTraffic.jsx";
 
 // Where the "Analytics" tab goes. Set VITE_ANALYTICS_URL to your own property's
 // reports page (copy it from the browser while logged in to Google Analytics),
@@ -126,6 +127,11 @@ export default function AdminDashboard() {
               Customers
             </NavLink>
           )}
+          {isSuperAdmin && (
+            <NavLink to="traffic" className={tabClass} end>
+              Traffic
+            </NavLink>
+          )}
           {/* Opens Google Analytics in a new tab: visitors, pages, sources, sales */}
           {isSuperAdmin && (
             <a
@@ -156,6 +162,7 @@ export default function AdminDashboard() {
             <Route path="orders" element={<AdminOrders />} />
             {isSuperAdmin && <Route path="admins" element={<AdminUsers />} />}
             {isSuperAdmin && <Route path="customers" element={<AdminCustomers />} />}
+            {isSuperAdmin && <Route path="traffic" element={<AdminTraffic />} />}
           </Routes>
         </div>
       </div>

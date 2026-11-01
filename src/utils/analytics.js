@@ -15,6 +15,11 @@ const optedOut = () => {
   }
 };
 
+// True when anything may be recorded about this visit (production only,
+// and not for people who opted out or have Do Not Track on).
+export const trackingAllowed = () =>
+  import.meta.env.PROD && typeof window !== "undefined" && !optedOut();
+
 const enabled = () => Boolean(GA_ID) && import.meta.env.PROD && typeof window !== "undefined" && !optedOut();
 
 export function initAnalytics() {
