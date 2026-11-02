@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { InfoLink } from "./InfoModal.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 // TIP: convert these to .webp (see scripts/compress-images.mjs) and change
 // the extensions below, e.g. "./images/29342.webp".
 import image29204 from "./images/29204.jpg";
@@ -20,15 +21,40 @@ const SLIDE_META = [
   { key: "slide4", primaryTo: "/templates", secondaryTo: "/catalog", image: null, hasNote: false },
 ];
 
-// English text for the templates slide, used until you add
-// heroCarousel.slide4.* to your locale files.
+// English text, used for any heroCarousel.slideN.* key your locale files do not
+// have. Paste heroCarousel.en.json into your English locale to override it.
 const SLIDE_DEFAULTS = {
+  slide1: {
+    eyebrow: "The Adyoolau library",
+    title: "Books worth",
+    highlight: "keeping.",
+    body: "A carefully chosen library of ebooks you own outright. Read on any device, today and for years to come.",
+    primaryCta: "Explore the library",
+    secondaryCta: "Start with a free title",
+  },
+  slide2: {
+    eyebrow: "Buy with confidence",
+    title: "Every purchase,",
+    highlight: "protected.",
+    body: "Secure checkout, instant access to your library, and a clear refund policy. Choose your next read with total peace of mind.",
+    primaryCta: "Browse the catalog",
+    secondaryCta: "Read our refund policy",
+  },
+  slide3: {
+    eyebrow: "Free to begin",
+    title: "Start with a",
+    highlight: "free title.",
+    body: "Add a free book to your library in one click, then read it anywhere. Step up to the full catalog whenever you're ready.",
+    primaryCta: "Get a free title",
+    secondaryCta: "Our story",
+    note: "Free titles never need a credit card.",
+  },
   slide4: {
-    eyebrow: "Templates for developers",
+    eyebrow: "For builders",
     title: "Launch your next site",
-    highlight: "in an afternoon",
-    body: "Production-ready templates with the full source code included. Customize, deploy, done.",
-    primaryCta: "Browse templates",
+    highlight: "in an afternoon.",
+    body: "Production-ready templates with the complete source code. Customize, deploy, and make it entirely your own.",
+    primaryCta: "Explore templates",
     secondaryCta: "Browse books",
   },
 };
@@ -254,6 +280,7 @@ const HIGHLIGHT_WORD =
 // Missing or empty entries fall back to the slide's built-in picture.
 export default function HeroCarousel({ images = [] }) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   // False until the first slide change. While false, slide 1 renders with NO
@@ -281,7 +308,12 @@ export default function HeroCarousel({ images = [] }) {
     highlight: copy(meta, "highlight"),
     body: copy(meta, "body"),
     primaryCta: { label: copy(meta, "primaryCta"), to: meta.primaryTo },
-    secondaryCta: { label: copy(meta, "secondaryCta"), to: meta.secondaryTo },
+    // The "free title" slide invites signed-out visitors to create an account
+    // (claiming a free book needs one). Signed-in visitors see the usual link.
+    secondaryCta:
+      meta.key === "slide3" && !user
+        ? { label: t("heroCarousel.slide3.secondaryCtaGuest", { defaultValue: "Create free account" }), to: "/register" }
+        : { label: copy(meta, "secondaryCta"), to: meta.secondaryTo },
     note: meta.hasNote ? copy(meta, "note") : null,
   }));
 
