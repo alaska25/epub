@@ -300,6 +300,11 @@ export default function HeroCarousel({ images = [] }) {
   const copy = (meta, field) =>
     t(`heroCarousel.${meta.key}.${field}`, { defaultValue: SLIDE_DEFAULTS[meta.key]?.[field] });
 
+  // Signed-out visitors are invited to create an account on the free-title slide.
+  const guestSignupLabel = user
+    ? null
+    : t("heroCarousel.slide3.secondaryCtaGuest", { defaultValue: "Create free account" });
+
   const SLIDES = SLIDE_META.map((meta, i) => ({
     ...meta,
     image: images[i] || meta.image,
@@ -308,12 +313,14 @@ export default function HeroCarousel({ images = [] }) {
     highlight: copy(meta, "highlight"),
     body: copy(meta, "body"),
     primaryCta: { label: copy(meta, "primaryCta"), to: meta.primaryTo },
-    // The "free title" slide invites signed-out visitors to create an account
-    // (claiming a free book needs one). Signed-in visitors see the usual link.
+    // Desktop: the second link on the free-title slide becomes "Create free
+    // account" for signed-out visitors. Signed-in visitors see the usual link.
     secondaryCta:
-      meta.key === "slide3" && !user
-        ? { label: t("heroCarousel.slide3.secondaryCtaGuest", { defaultValue: "Create free account" }), to: "/register" }
+      meta.key === "slide3" && guestSignupLabel
+        ? { label: guestSignupLabel, to: "/register" }
         : { label: copy(meta, "secondaryCta"), to: meta.secondaryTo },
+    // Phone: the same invitation as a small link under the main button.
+    guestSignup: meta.key === "slide3" ? guestSignupLabel : null,
     note: meta.hasNote ? copy(meta, "note") : null,
   }));
 
@@ -567,6 +574,15 @@ export default function HeroCarousel({ images = [] }) {
                     {s.primaryCta.label}
                     <ArrowIcon />
                   </InfoLink>
+
+                  {s.guestSignup && (
+                    <InfoLink
+                      to="/register"
+                      className={`col-span-2 -mt-1 text-center text-sm font-semibold text-gold-300 underline-offset-4 hover:underline ${FOCUS_RING}`}
+                    >
+                      {s.guestSignup}
+                    </InfoLink>
+                  )}
                 </div>
               );
             })}
