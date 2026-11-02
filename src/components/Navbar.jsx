@@ -98,6 +98,7 @@ export default function Navbar() {
   // Falls back to a plain label if a translation key is missing, so the UI
   // never shows a raw key like "nav.account" to the user.
   const accountLabel = t("nav.account", "Account");
+  const registerLabel = t("nav.register", "Create account");
   const accountItems = isAdmin ? [] : [{ to: "/account", label: accountLabel }];
 
   useEffect(() => {
@@ -368,13 +369,18 @@ export default function Navbar() {
                 )}
               </>
             ) : (
-              <button
-                type="button"
-                onClick={handleSignIn}
-                className={`rounded-full bg-gold-500 px-4 py-2 text-sm font-semibold text-ink transition hover:bg-gold-400 ${ring}`}
-              >
-                {t("nav.signIn")}
-              </button>
+              // Signed out: "Create account" is the main button, "Sign in" the quieter one.
+              <div className="flex items-center gap-1">
+                <button type="button" onClick={handleSignIn} className={`${pill} ${pillIdle}`}>
+                  {t("nav.signIn")}
+                </button>
+                <Link
+                  to="/register"
+                  className={`rounded-full bg-gold-500 px-4 py-2 text-sm font-semibold text-ink transition hover:bg-gold-400 ${ring}`}
+                >
+                  {registerLabel}
+                </Link>
+              </div>
             )}
           </div>
 
@@ -471,13 +477,22 @@ export default function Navbar() {
                 </button>
               </>
             ) : (
-              <button
-                type="button"
-                onClick={handleSignIn}
-                className={`flex w-full items-center justify-center rounded-xl bg-gold-500 py-3 text-sm font-semibold text-ink transition hover:bg-gold-400 ${ring}`}
-              >
-                {t("nav.signIn")}
-              </button>
+              // Signed out: a clear main button and a quieter one underneath.
+              <div className="flex flex-col gap-2 p-1">
+                <Link
+                  to="/register"
+                  className={`flex w-full items-center justify-center rounded-xl bg-gold-500 py-3 text-sm font-semibold text-ink transition hover:bg-gold-400 ${ring}`}
+                >
+                  {registerLabel}
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleSignIn}
+                  className={`flex w-full items-center justify-center rounded-xl border border-navy-700 py-3 text-sm font-semibold text-ivory/85 transition hover:border-gold-500/60 hover:text-gold-400 ${ring}`}
+                >
+                  {t("nav.signIn")}
+                </button>
+              </div>
             )}
           </div>
         </div>
