@@ -6,6 +6,7 @@ export default {
     "admin": "Admin",
     "cart": "Cart",
     "signIn": "Sign in",
+    "register": "Create account",
     "logOut": "Log out",
     "language": "Language",
     "searchPlaceholder": "Search titles, authors, subjects..."
@@ -81,30 +82,42 @@ export default {
     "prevSlide": "Previous slide",
     "nextSlide": "Next slide",
     "goToSlide": "Go to slide {{number}}",
+    "trust1": "Instant access",
+    "trust2": "Secure checkout",
+    "trust3": "Money-back guarantee",
     "slide1": {
-      "eyebrow": "Digital Products • Ebooks • Templates • Tools",
-      "title": "A library that fits in your",
-      "highlight": "pocket.",
-      "body": "Adyoolau brings together fiction, nonfiction, and reference titles you can buy once and read anywhere — in the browser or downloaded for offline reading.",
-      "primaryCta": "Browse the Catalog",
-      "secondaryCta": "Start with a Free Title"
+      "eyebrow": "The Adyoolau library",
+      "title": "Books worth",
+      "highlight": "keeping.",
+      "body": "A carefully chosen library of ebooks you own outright. Read on any device, today and for years to come.",
+      "primaryCta": "Explore the library",
+      "secondaryCta": "Start with a free title"
     },
     "slide2": {
-      "eyebrow": "No Subscriptions",
-      "title": "Buy once,",
-      "highlight": "keep forever.",
-      "body": "Every book is yours after purchase — no expiring licenses, no recurring fees. Download a copy to keep, or read it in the browser whenever you like.",
-      "primaryCta": "Browse the Catalog",
-      "secondaryCta": "See our Refund Policy"
+      "eyebrow": "Buy with confidence",
+      "title": "Every purchase,",
+      "highlight": "protected.",
+      "body": "Secure checkout, instant access to your library, and a clear refund policy. Choose your next read with total peace of mind.",
+      "primaryCta": "Browse the catalog",
+      "secondaryCta": "Read our refund policy"
     },
     "slide3": {
-      "eyebrow": "New Here?",
-      "title": "Try a title,",
-      "highlight": "on us.",
-      "body": "Not ready to commit? A handful of our titles are completely free to claim — a low-risk way to see what Adyoolau is about before you buy.",
-      "primaryCta": "Start with a Free Title",
-      "secondaryCta": "About Adyoolau",
-      "note": "No credit card required."
+      "eyebrow": "Free to begin",
+      "title": "Start with a",
+      "highlight": "free title.",
+      "body": "Add a free book to your library in one click, then read it anywhere. Step up to the full catalog whenever you're ready.",
+      "primaryCta": "Get a free title",
+      "secondaryCta": "Our story",
+      "secondaryCtaGuest": "Create free account",
+      "note": "Free titles never need a credit card."
+    },
+    "slide4": {
+      "eyebrow": "For builders",
+      "title": "Launch your next site",
+      "highlight": "in an afternoon.",
+      "body": "Production-ready templates with the complete source code. Customize, deploy, and make it entirely your own.",
+      "primaryCta": "Explore templates",
+      "secondaryCta": "Browse books"
     }
   },
   "footer": {
